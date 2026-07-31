@@ -1,0 +1,37 @@
+{
+  "customers": [
+    {
+      "id": "CUS001",
+      "name": "James Anderson",
+      "email": "james.anderson@email.com",
+      "phone": "+91 98765 43210",
+      "riskProfile": "Conservative",
+      "investmentGoal": "Retirement Planning",
+      "joinedDate": "2025-01-15",
+      "portfolioValue": 850000,
+      "status": "Active"
+    },
+    {
+      "id": "CUS002",
+      "name": "Sophia Williams",
+      "email": "sophia.williams@email.com",
+      "phone": "+91 87654 32109",
+      "riskProfile": "Moderate",
+      "investmentGoal": "Wealth Growth",
+      "joinedDate": "2025-02-20",
+      "portfolioValue": 1250000,
+      "status": "Active"
+    },
+    {
+      "id": "CUS003",
+      "name": "Oliver Brown",
+      "email": "oliver.brown@email.com",
+      "phone": "+91 76543 21098",
+      "riskProfile": "Aggressive",
+      "investmentGoal": "Capital Appreciation",
+      "joinedDate": "2025-03-10",
+      "portfolioValue": 2200000,
+      "status": "Active"
+    }
+  ]
+}

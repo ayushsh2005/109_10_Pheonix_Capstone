@@ -1,0 +1,25 @@
+{
+  "suggestions": [
+    {
+      "id": "SUG001",
+      "customerId": "CUS001",
+      "type": "Diversification",
+      "severity": "Medium",
+      "message": "Portfolio has high exposure to UK bonds. Consider adding equity assets for long-term growth."
+    },
+    {
+      "id": "SUG002",
+      "customerId": "CUS002",
+      "type": "Risk",
+      "severity": "High",
+      "message": "Current portfolio allocation exceeds recommended risk level for moderate investors."
+    },
+    {
+      "id": "SUG003",
+      "customerId": "CUS003",
+      "type": "Opportunity",
+      "severity": "Low",
+      "message": "Technology exposure is performing strongly. Review concentration risk before increasing allocation."
+    }
+  ]
+}

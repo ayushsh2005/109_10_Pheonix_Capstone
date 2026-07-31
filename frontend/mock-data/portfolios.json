@@ -1,0 +1,31 @@
+{
+  "portfolios": [
+    {
+      "id": "PORT001",
+      "customerId": "CUS001",
+      "totalInvestment": 750000,
+      "currentValue": 850000,
+      "profitLoss": 100000,
+      "returnPercentage": 13.33,
+      "lastUpdated": "2026-07-30"
+    },
+    {
+      "id": "PORT002",
+      "customerId": "CUS002",
+      "totalInvestment": 1000000,
+      "currentValue": 1250000,
+      "profitLoss": 250000,
+      "returnPercentage": 25,
+      "lastUpdated": "2026-07-30"
+    },
+    {
+      "id": "PORT003",
+      "customerId": "CUS003",
+      "totalInvestment": 1800000,
+      "currentValue": 2200000,
+      "profitLoss": 400000,
+      "returnPercentage": 22.22,
+      "lastUpdated": "2026-07-30"
+    }
+  ]
+}
