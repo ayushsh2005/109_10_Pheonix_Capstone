@@ -112,4 +112,30 @@ export const mockStore = {
 
   getSuggestionsByCustomer: (customerId) =>
     clone(suggestions.filter(s => s.customerId === customerId)),
+
+  /* ── Performance ─────────────────────────────────────────────── */
+  getCustomerPerformance: (customerId) => {
+    const portfolio = portfolios.find(p => p.customerId === customerId);
+    const invs = portfolio ? investments.filter(inv => inv.portfolioId === portfolio.id) : [];
+
+    const totalInvested  = invs.reduce((s, i) => s + i.quantity * i.purchasePrice, 0);
+    const currentValue   = invs.reduce((s, i) => s + i.quantity * i.currentPrice, 0);
+    const profitLoss     = currentValue - totalInvested;
+    const returnPct      = totalInvested > 0 ? (profitLoss / totalInvested) * 100 : 0;
+
+    // Synthetic 6-month series interpolated from invested → current with slight noise
+    const now    = new Date();
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      return d.toLocaleString('en', { month: 'short' });
+    });
+    const growth = returnPct / 100;
+    const performanceSeries = months.map((month, i) => {
+      const frac   = (i + 1) / months.length;
+      const noise  = (Math.sin(i * 2.3) * 0.015); // deterministic ripple
+      return { month, value: Math.round(totalInvested * (1 + growth * frac + noise)) };
+    });
+
+    return clone({ totalInvested, currentValue, profitLoss, returnPercentage: returnPct, performanceSeries });
+  },
 };

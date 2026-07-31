@@ -9,10 +9,12 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import InvestmentForm from '../components/forms/InvestmentForm';
 import EmptyState from '../components/ui/EmptyState';
 import { SkeletonCard } from '../components/ui/Skeleton';
+import PerformanceChart from '../components/charts/PerformanceChart';
 import { getCustomer } from '../api/services/customers';
 import { getInvestmentsByCustomer, createInvestment, updateInvestment, deleteInvestment } from '../api/services/investments';
 import { getSuggestionsByCustomer } from '../api/services/suggestions';
-import { formatCurrency, formatCurrencyPrecise, formatDate, formatReturnPct, getInitials, calcInvestmentMetrics, calcPortfolioStats } from '../utils/formatters';
+import { getCustomerPerformance } from '../api/services/performance';
+import { formatCurrency, formatCurrencyPrecise, formatDate, formatReturnPct, getInitials, calcInvestmentMetrics } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
 
 export default function CustomerDetailPage() {
@@ -23,6 +25,7 @@ export default function CustomerDetailPage() {
   const [customer,    setCustomer]    = useState(null);
   const [investments, setInvestments] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [performance, setPerformance] = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState(null);
 
@@ -37,15 +40,17 @@ export default function CustomerDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [cust, invs, suggs] = await Promise.all([
+      const [cust, invs, suggs, perf] = await Promise.all([
         getCustomer(id),
         getInvestmentsByCustomer(id),
         getSuggestionsByCustomer(id),
+        getCustomerPerformance(id),
       ]);
       if (!cust) { setError('Customer not found'); setLoading(false); return; }
       setCustomer(cust);
       setInvestments(invs);
       setSuggestions(suggs);
+      setPerformance(perf);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -55,7 +60,7 @@ export default function CustomerDetailPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const stats = calcPortfolioStats(investments);
+  const stats = performance ?? { totalInvested: 0, currentValue: 0, profitLoss: 0, returnPercentage: 0 };
 
   const handleCreateInvestment = async (data) => {
     setSaving(true);
@@ -167,7 +172,7 @@ export default function CustomerDetailPage() {
         />
         <StatCard
           label="Current Value"
-          value={formatCurrency(stats.totalCurrentValue)}
+          value={formatCurrency(stats.currentValue)}
           iconBg="var(--primary-subtle)"
           iconColor="var(--primary)"
         />
@@ -184,14 +189,25 @@ export default function CustomerDetailPage() {
         <StatCard
           label="Return Rate"
           value={
-            <span className={stats.returnPct >= 0 ? 'perf-positive' : 'perf-negative'}>
-              {formatReturnPct(stats.returnPct)}
+            <span className={stats.returnPercentage >= 0 ? 'perf-positive' : 'perf-negative'}>
+              {formatReturnPct(stats.returnPercentage)}
             </span>
           }
-          iconBg={stats.returnPct >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)'}
-          iconColor={stats.returnPct >= 0 ? 'var(--success)' : 'var(--danger)'}
+          iconBg={stats.returnPercentage >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)'}
+          iconColor={stats.returnPercentage >= 0 ? 'var(--success)' : 'var(--danger)'}
         />
       </div>
+
+      {/* Performance Chart */}
+      {performance?.performanceSeries?.length > 0 && (
+        <GlassCard style={{ marginBottom: 20 }}>
+          <div className="chart-card">
+            <div className="chart-title">Portfolio Performance</div>
+            <div className="chart-subtitle">6-month value trend for this customer</div>
+            <PerformanceChart data={performance.performanceSeries} />
+          </div>
+        </GlassCard>
+      )}
 
       {/* Investments Table */}
       <GlassCard style={{ marginBottom: 20 }}>
