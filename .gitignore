@@ -1,0 +1,86 @@
+# ==========================
+# General
+# ==========================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS generated files
+*.tmp
+*.temp
+
+
+# ==========================
+# Backend (Spring Boot)
+# ==========================
+
+backend/target/
+backend/*.jar
+backend/*.war
+
+# Maven
+backend/.mvn/timing.properties
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot generated files
+backend/.springBeans
+backend/.sts4-cache/
+
+# IntelliJ / Eclipse
+backend/.idea/
+backend/*.iml
+backend/.classpath
+backend/.project
+backend/.settings/
+
+# Database files
+*.db
+*.sqlite
+
+
+# ==========================
+# Frontend (React)
+# ==========================
+
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
+# React environment files
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# npm logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Cache
+frontend/.eslintcache
+frontend/.cache
+
+# Testing
+frontend/coverage/
+
+
+# ==========================
+# IDE
+# ==========================
+
+*.iml
+.idea/
+.vscode/
