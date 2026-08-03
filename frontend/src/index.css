@@ -487,3 +487,40 @@ table.data-table { width: 100%; border-collapse: collapse; min-width: 600px; }
 .w-full { width: 100%; }
 .divider { height: 1px; background: var(--border); margin: 16px 0; }
 
+/* ── P&L Hero ────────────────────────────────────────────────── */
+.pl-hero    { padding: 24px; }
+.pl-divider { height: 1px; background: var(--border); margin: 20px 0; }
+.pl-kpi     { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.pl-amount  { font-size: 38px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
+.pl-pct     { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+.pl-positive { color: var(--success); }
+.pl-negative { color: var(--danger); }
+.pl-label   { font-size: 10px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 8px; }
+.pl-support { display: flex; gap: 32px; flex-wrap: wrap; }
+.pl-support-label { font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.pl-support-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+@media (max-width: 600px) { .pl-amount { font-size: 28px; } .pl-pct { font-size: 16px; } }
+
+/* ── Range Selector ──────────────────────────────────────────── */
+.range-selector { display: flex; gap: 2px; background: var(--border); border-radius: var(--r-md); padding: 3px; flex-shrink: 0; }
+.range-btn { padding: 4px 12px; border-radius: calc(var(--r-sm) - 1px); font-size: 11.5px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all var(--t-fast); background: none; border: none; font-family: var(--font); }
+.range-btn.active { background: var(--bg-elevated); color: var(--text-primary); box-shadow: var(--shadow-xs); }
+.range-btn:hover:not(.active) { color: var(--text-primary); background: rgba(0,0,0,0.04); }
+[data-theme="dark"] .range-btn:hover:not(.active) { background: rgba(255,255,255,0.06); }
+
+/* ── Allocation Compare ──────────────────────────────────────── */
+.alloc-compare     { display: flex; flex-direction: column; gap: 14px; padding-top: 8px; }
+.alloc-compare-row { display: flex; align-items: center; gap: 10px; }
+.alloc-compare-label { width: 56px; font-size: 11.5px; font-weight: 700; color: var(--text-primary); flex-shrink: 0; }
+.alloc-bar-wrap    { flex: 1; position: relative; height: 18px; background: var(--border); border-radius: var(--r-full); overflow: hidden; }
+.alloc-bar-actual  { height: 100%; border-radius: var(--r-full); transition: width 0.5s ease; opacity: 0.85; }
+.alloc-bar-target  { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text-primary); opacity: 0.5; }
+.alloc-compare-pct { font-size: 12px; font-weight: 700; min-width: 34px; text-align: right; flex-shrink: 0; }
+.alloc-compare-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: var(--r-full); min-width: 60px; text-align: center; flex-shrink: 0; }
+.alloc-ok    { color: var(--success);  background: var(--success-bg); }
+.alloc-over  { color: var(--danger);   background: var(--danger-bg); }
+.alloc-under { color: var(--warning);  background: var(--warning-bg); }
+
+/* ── Customer Card P&L row ───────────────────────────────────── */
+.customer-meta-item.span-2 { grid-column: span 2; }
+
