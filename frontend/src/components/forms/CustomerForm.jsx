@@ -6,7 +6,7 @@ import { AlertCircle } from 'lucide-react';
 const RISK_PROFILES = ['Conservative', 'Moderate', 'Aggressive'];
 const GOALS = ['Retirement Planning', 'Wealth Growth', 'Capital Appreciation', 'Income Generation', 'Education', 'Emergency Fund'];
 
-const EMPTY = { name: '', email: '', phone: '', riskProfile: '', investmentGoal: '' };
+const EMPTY = { name: '', email: '', phone: '', riskProfile: '', investmentGoal: '', notes: '', targetAllocation: { Stocks: '', Bonds: '', Cash: '', Others: '' } };
 
 function validate(f) {
   const errs = {};
@@ -33,7 +33,17 @@ export default function CustomerForm({ open, onClose, onSubmit, initial, loading
 
   useEffect(() => {
     if (open) {
-      setFields(initial ? { name: initial.name || '', email: initial.email || '', phone: initial.phone || '', riskProfile: initial.riskProfile || '', investmentGoal: initial.investmentGoal || '' } : EMPTY);
+      setFields(initial ? {
+        name:             initial.name             || '',
+        email:            initial.email            || '',
+        phone:            initial.phone            || '',
+        riskProfile:      initial.riskProfile      || '',
+        investmentGoal:   initial.investmentGoal   || '',
+        notes:            initial.notes            || '',
+        targetAllocation: initial.targetAllocation
+          ? { Stocks: initial.targetAllocation.Stocks ?? '', Bonds: initial.targetAllocation.Bonds ?? '', Cash: initial.targetAllocation.Cash ?? '', Others: initial.targetAllocation.Others ?? '' }
+          : { Stocks: '', Bonds: '', Cash: '', Others: '' },
+      } : EMPTY);
       setErrors({});
       setTouched({});
     }
@@ -60,7 +70,14 @@ export default function CustomerForm({ open, onClose, onSubmit, initial, loading
     const errs = validate(fields);
     setErrors(errs);
     if (Object.keys(errs).length === 0) {
-      onSubmit(fields);
+      const tgt = fields.targetAllocation;
+      const anySet = Object.values(tgt).some(v => v !== '' && Number(v) > 0);
+      onSubmit({
+        ...fields,
+        targetAllocation: anySet
+          ? Object.fromEntries(Object.entries(tgt).map(([k, v]) => [k, Number(v) || 0]))
+          : null,
+      });
     }
   };
 
@@ -144,6 +161,49 @@ export default function CustomerForm({ open, onClose, onSubmit, initial, loading
             {GOALS.map(g => <option key={g} value={g}>{g}</option>)}
           </select>
         </Field>
+
+        <Field label="Manager Notes" error={errors.notes}>
+          <textarea
+            className="form-textarea"
+            placeholder="Any notes about this client's preferences, restrictions, or goals…"
+            value={fields.notes}
+            onChange={e => set('notes', e.target.value)}
+            rows={3}
+            maxLength={1000}
+          />
+        </Field>
+
+        <div style={{ marginTop: 4 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Target Allocation <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 400 }}>(optional — must sum to 100%)</span></div>
+          {(() => {
+            const total = Object.values(fields.targetAllocation).reduce((s, v) => s + (Number(v) || 0), 0);
+            const warn  = total > 0 && total !== 100;
+            return (
+              <>
+                <div className="form-grid" style={{ marginBottom: 6 }}>
+                  {['Stocks', 'Bonds', 'Cash', 'Others'].map(type => (
+                    <div className="form-group" key={type}>
+                      <label className="form-label">{type} %</label>
+                      <input
+                        className="form-input"
+                        type="number"
+                        min="0" max="100" step="1"
+                        placeholder="0"
+                        value={fields.targetAllocation[type]}
+                        onChange={e => set('targetAllocation', { ...fields.targetAllocation, [type]: e.target.value })}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {total > 0 && (
+                  <div style={{ fontSize: 12, fontWeight: 600, color: warn ? 'var(--warning)' : 'var(--success)' }}>
+                    Total: {total}% {warn ? `— needs ${100 - total > 0 ? '+' : ''}${100 - total}% to reach 100%` : '✓ Valid'}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
       </form>
     </Modal>
   );

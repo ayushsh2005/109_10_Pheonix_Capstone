@@ -42,10 +42,11 @@ function validate(f) {
   return errs;
 }
 
-export default function InvestmentForm({ open, onClose, onSubmit, initial, loading, customerName }) {
+export default function InvestmentForm({ open, onClose, onSubmit, initial, loading, customerName, customers, customerId, onCustomerChange }) {
   const [fields, setFields] = useState(EMPTY);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [custErr, setCustErr] = useState('');
 
   useEffect(() => {
     if (open) {
@@ -64,6 +65,7 @@ export default function InvestmentForm({ open, onClose, onSubmit, initial, loadi
       }
       setErrors({});
       setTouched({});
+      setCustErr('');
     }
   }, [open, initial]);
 
@@ -85,6 +87,11 @@ export default function InvestmentForm({ open, onClose, onSubmit, initial, loadi
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Validate customer selection when in global create mode
+    if (customers && !initial && !customerId) {
+      setCustErr('Please select a customer');
+      return;
+    }
     const allTouched = Object.fromEntries(Object.keys(fields).map(k => [k, true]));
     setTouched(allTouched);
     const errs = validate(fields);
@@ -101,13 +108,14 @@ export default function InvestmentForm({ open, onClose, onSubmit, initial, loadi
 
   const isEdit = Boolean(initial);
   const today = new Date().toISOString().split('T')[0];
+  const showCustomerSelect = Boolean(customers && !isEdit);
 
   return (
     <Modal
       open={open}
       onClose={onClose}
       title={isEdit ? 'Edit Investment' : 'Add Investment'}
-      subtitle={customerName ? `Customer: ${customerName}` : 'Record a new investment position'}
+      subtitle={showCustomerSelect ? 'Select a customer and record a new investment position' : customerName ? `Customer: ${customerName}` : 'Record a new investment position'}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
@@ -118,6 +126,21 @@ export default function InvestmentForm({ open, onClose, onSubmit, initial, loadi
       }
     >
       <form onSubmit={handleSubmit} noValidate>
+        {showCustomerSelect && (
+          <div className="form-group" style={{ marginBottom: 16 }}>
+            <label className="form-label">Customer <span className="required">*</span></label>
+            <select
+              className={`form-select ${custErr ? 'error' : ''}`}
+              value={customerId || ''}
+              onChange={e => { onCustomerChange(e.target.value); setCustErr(''); }}
+              style={{ height: 40 }}
+            >
+              <option value="">Select customer…</option>
+              {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            {custErr && <span className="form-error"><AlertCircle size={12} />{custErr}</span>}
+          </div>
+        )}
         <div className="form-grid">
           <Field label="Asset Name" required error={errors.assetName}>
             <input
