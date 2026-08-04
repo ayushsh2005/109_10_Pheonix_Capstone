@@ -48,6 +48,18 @@ describe('ToastProvider - variants', () => {
     await waitFor(() => expect(screen.getByText('Test message')).toBeInTheDocument());
   });
 });
+describe('ToastProvider - string form', () => {
+  it('renders toast when called with plain string', async () => {
+    function StringTrigger() {
+      const toast = useToast();
+      return <button onClick={() => toast.info('Simple message')}>Go</button>;
+    }
+    render(<ToastProvider><StringTrigger /></ToastProvider>);
+    fireEvent.click(screen.getByText('Go'));
+    await waitFor(() => expect(screen.getByText('Simple message')).toBeInTheDocument());
+  });
+});
+
 describe('ToastProvider - dismiss', () => {
   it('removes toast after dismiss click', async () => {
     jest.useFakeTimers();

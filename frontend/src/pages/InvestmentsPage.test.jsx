@@ -94,7 +94,33 @@ describe('InvestmentsPage — delete', () => {
   });
 });
 
-describe('InvestmentsPage — edit form', () => {
+describe('InvestmentsPage - error state', () => {
+  it('shows error message when API fails', async () => {
+    getInvestments.mockRejectedValue(new Error('Load failed'));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Load failed')).toBeInTheDocument());
+  });
+});
+
+describe('InvestmentsPage - asset type filter', () => {
+  it('filters by asset type dropdown', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('Reliance'));
+    const selects = screen.getAllByRole('combobox');
+    fireEvent.change(selects[0], { target: { value: 'Bonds' } });
+    expect(screen.queryByText('Reliance')).not.toBeInTheDocument();
+    expect(screen.getByText('HDFC Bond')).toBeInTheDocument();
+  });
+});
+
+describe('InvestmentsPage - summary bar', () => {
+  it('shows total market value when investments exist', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/total market value/i)).toBeInTheDocument());
+  });
+});
+
+describe('InvestmentsPage - edit form', () => {
   it('opens InvestmentForm when edit icon is clicked', async () => {
     renderPage();
     await waitFor(() => screen.getAllByLabelText(/edit/i));

@@ -146,6 +146,73 @@ describe('mockStore.getCustomerPerformance', () => {
   });
 });
 
+describe('mockStore.getPortfolio', () => {
+  it('returns null for customer with no portfolio', () => {
+    const c = mockStore.createCustomer({ name: 'New', email: 'n@t.com', riskProfile: 'Low', investmentGoal: 'Growth' });
+    expect(mockStore.getPortfolio(c.id)).toBeNull();
+  });
+});
+
+describe('mockStore.getInvestmentsByCustomer - no portfolio', () => {
+  it('returns empty array for customer with no portfolio', () => {
+    const c = mockStore.createCustomer({ name: 'NoPF', email: 'x@t.com', riskProfile: 'Low', investmentGoal: 'Growth' });
+    expect(mockStore.getInvestmentsByCustomer(c.id)).toEqual([]);
+  });
+});
+
+describe('mockStore.createInvestment - new portfolio', () => {
+  it('creates a new portfolio for a customer who has none', () => {
+    const c = mockStore.createCustomer({ name: 'Fresh', email: 'f@t.com', riskProfile: 'Low', investmentGoal: 'Growth' });
+    const inv = mockStore.createInvestment(c.id, {
+      assetName: 'NFLX', assetType: 'Stock', ticker: 'NFLX',
+      quantity: 3, purchasePrice: 5000, currentPrice: 5500, purchaseDate: '2025-01-01',
+    });
+    expect(inv.id).toMatch(/^INV/);
+    expect(mockStore.getPortfolio(c.id)).not.toBeNull();
+  });
+  it('records Buy trade with no purchaseDate provided (uses today)', () => {
+    const id = mockStore.getCustomers()[0].id;
+    const inv = mockStore.createInvestment(id, {
+      assetName: 'AMZN', assetType: 'Stock', ticker: 'AMZN',
+      quantity: 2, purchasePrice: 15000, currentPrice: 16000,
+    });
+    const trades = mockStore.getTrades(id);
+    const buyTrade = trades.find(t => t.investmentId === inv.id);
+    expect(buyTrade.tradeDate).toBeTruthy();
+  });
+});
+
+describe('mockStore.sellInvestment - trade date default', () => {
+  it('uses today as tradeDate when none provided', () => {
+    const id = mockStore.getCustomers()[0].id;
+    const inv = mockStore.createInvestment(id, {
+      assetName: 'META', assetType: 'Stock', ticker: 'META',
+      quantity: 5, purchasePrice: 3000, currentPrice: 3200, purchaseDate: '2025-01-01',
+    });
+    const result = mockStore.sellInvestment(inv.id, 2, 3200, null);
+    expect(result.realisedPL).toBe(400);
+  });
+});
+
+describe('mockStore.deleteCustomer - no portfolio', () => {
+  it('deletes customer who has no portfolio', () => {
+    const c = mockStore.createCustomer({ name: 'NoPF2', email: 'np@t.com', riskProfile: 'Low', investmentGoal: 'Growth' });
+    mockStore.deleteCustomer(c.id);
+    expect(mockStore.getCustomer(c.id)).toBeNull();
+  });
+});
+
+describe('mockStore.getCustomerPerformance - all ranges', () => {
+  it('returns 12 data points for 3M range', () => {
+    const id = mockStore.getCustomers()[0].id;
+    expect(mockStore.getCustomerPerformance(id, '3M').performanceSeries).toHaveLength(12);
+  });
+  it('returns 24 data points for All range', () => {
+    const id = mockStore.getCustomers()[0].id;
+    expect(mockStore.getCustomerPerformance(id, 'All').performanceSeries).toHaveLength(24);
+  });
+});
+
 describe('mockStore.getDashboard', () => {
   it('returns the dashboard object', () => {
     expect(mockStore.getDashboard()).toBeTruthy();

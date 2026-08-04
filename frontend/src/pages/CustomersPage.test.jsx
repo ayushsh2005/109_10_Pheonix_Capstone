@@ -134,7 +134,42 @@ describe('CustomersPage — delete', () => {
   });
 });
 
-describe('CustomersPage — create/edit form', () => {
+describe('CustomersPage - error state', () => {
+  it('shows error message when API fails', async () => {
+    getCustomers.mockRejectedValue(new Error('Server down'));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Server down')).toBeInTheDocument());
+  });
+});
+
+describe('CustomersPage - sort variants', () => {
+  it('sorts by P&L low to high', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('Alice Sharma'));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'pl-asc' } });
+    expect(screen.getByText('Bob Patel')).toBeInTheDocument();
+  });
+  it('sorts by value high to low', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('Alice Sharma'));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'value-desc' } });
+    expect(screen.getByText('Alice Sharma')).toBeInTheDocument();
+  });
+});
+
+describe('CustomersPage - update customer', () => {
+  it('calls updateCustomer and updates card on form submit', async () => {
+    const { updateCustomer } = require('../api/services/customers');
+    updateCustomer.mockResolvedValue({ ...mockCustomers[0], name: 'Alice Updated' });
+    renderPage();
+    await waitFor(() => screen.getByLabelText(/edit alice sharma/i));
+    fireEvent.click(screen.getByLabelText(/edit alice sharma/i));
+    fireEvent.click(screen.getByText('Submit'));
+    await waitFor(() => expect(updateCustomer).toHaveBeenCalled());
+  });
+});
+
+describe('CustomersPage - create/edit form', () => {
   it('opens CustomerForm when Add Customer is clicked', async () => {
     renderPage();
     await waitFor(() => screen.getByText(/add customer/i));

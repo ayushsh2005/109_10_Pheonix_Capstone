@@ -93,7 +93,22 @@ describe('DashboardPage — charts', () => {
   });
 });
 
-describe('DashboardPage — error state', () => {
+describe('DashboardPage - greeting variants', () => {
+  it('shows Good morning before noon', async () => {
+    jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/good morning/i)).toBeInTheDocument());
+    jest.restoreAllMocks();
+  });
+  it('shows Good evening after 5pm', async () => {
+    jest.spyOn(Date.prototype, 'getHours').mockReturnValue(19);
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/good evening/i)).toBeInTheDocument());
+    jest.restoreAllMocks();
+  });
+});
+
+describe('DashboardPage - error state', () => {
   it('shows error message when API fails', async () => {
     getDashboard.mockRejectedValue(new Error('Server error'));
     renderPage();
