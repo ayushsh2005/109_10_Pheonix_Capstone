@@ -25,6 +25,8 @@ const CustomTooltip = ({ active, payload }) => {
 export default function AllocationChart({ data = [] }) {
   const chartData = data.map(d => ({ name: d.assetType, value: d.value, percentage: d.percentage }));
 
+  const total = data.reduce((s, d) => s + d.value, 0);
+
   return (
     <div>
       <ResponsiveContainer width="100%" height={200}>
@@ -44,6 +46,12 @@ export default function AllocationChart({ data = [] }) {
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />
+          {total > 0 && (
+            <>
+              <text x="50%" y="46%" textAnchor="middle" style={{ fontSize: 11, fill: 'var(--text-secondary)', fontFamily: 'var(--font)' }}>Total</text>
+              <text x="50%" y="59%" textAnchor="middle" style={{ fontSize: 12, fontWeight: 700, fill: 'var(--text-primary)', fontFamily: 'var(--font)' }}>{formatCurrency(total)}</text>
+            </>
+          )}
         </PieChart>
       </ResponsiveContainer>
 

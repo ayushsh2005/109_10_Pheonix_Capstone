@@ -29,7 +29,7 @@ export default function Sidebar({ open, onClose, collapsed, onToggleCollapse }) 
           <div className="sidebar-logo" aria-hidden="true">PM</div>
           <div className="sidebar-brand-text">
             <div className="sidebar-brand-name">Portfolio Manager</div>
-            <div className="sidebar-brand-sub">Team Pheonix</div>
+            <div className="sidebar-brand-sub">Team Phoenix</div>
           </div>
         </div>
 

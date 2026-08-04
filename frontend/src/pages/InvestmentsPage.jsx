@@ -7,7 +7,7 @@ import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import InvestmentForm from '../components/forms/InvestmentForm';
 import { SkeletonTable } from '../components/ui/Skeleton';
-import { getInvestments, getInvestmentsByCustomer, updateInvestment, deleteInvestment } from '../api/services/investments';
+import { getInvestments, getInvestmentsByCustomer, createInvestment, updateInvestment, deleteInvestment } from '../api/services/investments';
 import { getCustomers } from '../api/services/customers';
 import { formatCurrencyPrecise, formatCurrency, formatDate, formatReturnPct, calcInvestmentMetrics } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
@@ -26,6 +26,8 @@ export default function InvestmentsPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [saving,       setSaving]       = useState(false);
   const [deleting,     setDeleting]     = useState(false);
+  const [createOpen,   setCreateOpen]   = useState(false);
+  const [newCustId,    setNewCustId]    = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,6 +75,21 @@ export default function InvestmentsPage() {
     }
   };
 
+  const handleCreate = async (data) => {
+    setSaving(true);
+    try {
+      const created = await createInvestment(newCustId, data);
+      setInvestments(prev => [...prev, created]);
+      setCreateOpen(false);
+      setNewCustId('');
+      toast.success('Investment added successfully');
+    } catch (e) {
+      toast.error(e.message, 'Failed to add investment');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
@@ -106,6 +123,15 @@ export default function InvestmentsPage() {
             )}
           </h1>
           <p className="page-subtitle">All investment positions across all customers</p>
+        </div>
+        <div className="page-header-actions">
+          <Button
+            variant="primary"
+            icon={<Plus size={15} />}
+            onClick={() => { setNewCustId(''); setCreateOpen(true); }}
+          >
+            Add Investment
+          </Button>
         </div>
       </div>
 
@@ -231,6 +257,16 @@ export default function InvestmentsPage() {
         onSubmit={handleUpdate}
         initial={editInv}
         loading={saving}
+      />
+
+      <InvestmentForm
+        open={createOpen}
+        onClose={() => { setCreateOpen(false); setNewCustId(''); }}
+        onSubmit={handleCreate}
+        loading={saving}
+        customers={customers}
+        customerId={newCustId}
+        onCustomerChange={setNewCustId}
       />
 
       <ConfirmDialog

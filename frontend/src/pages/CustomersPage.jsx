@@ -8,8 +8,8 @@ import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import CustomerForm from '../components/forms/CustomerForm';
 import { Skeleton } from '../components/ui/Skeleton';
-import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../api/services/customers';
-import { formatCurrency, formatDate, getInitials } from '../utils/formatters';
+import { getCustomers, createCustomer, updateCustomer, archiveCustomer } from '../api/services/customers';
+import { formatCurrency, formatDate, formatReturnPct, getInitials } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
 
 export default function CustomersPage() {
@@ -20,23 +20,25 @@ export default function CustomersPage() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
   const [search, setSearch]       = useState('');
+  const [sortBy, setSortBy]       = useState('name-asc');
+  const [showArchived, setShowArchived] = useState(false);
 
   // Form state
   const [formOpen, setFormOpen]   = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [saving, setSaving]       = useState(false);
 
-  // Delete state
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleting, setDeleting]   = useState(false);
+  // Archive state
+  const [archiveTarget, setArchiveTarget] = useState(null);
+  const [archiving, setArchiving] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    getCustomers()
+    getCustomers(showArchived)
       .then(d => { setCustomers(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
-  }, []);
+  }, [showArchived]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -45,6 +47,17 @@ export default function CustomersPage() {
     c.email.toLowerCase().includes(search.toLowerCase()) ||
     c.id.toLowerCase().includes(search.toLowerCase())
   );
+
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'name-asc':   return a.name.localeCompare(b.name);
+      case 'name-desc':  return b.name.localeCompare(a.name);
+      case 'pl-desc':    return (b.profitLoss ?? 0) - (a.profitLoss ?? 0);
+      case 'pl-asc':     return (a.profitLoss ?? 0) - (b.profitLoss ?? 0);
+      case 'value-desc': return (b.currentValue ?? 0) - (a.currentValue ?? 0);
+      default:           return 0;
+    }
+  });
 
   const handleCreate = async (data) => {
     setSaving(true);
@@ -76,16 +89,19 @@ export default function CustomersPage() {
   };
 
   const handleDelete = async () => {
-    setDeleting(true);
+    setArchiving(true);
     try {
-      await deleteCustomer(deleteTarget.id);
-      setCustomers(cs => cs.filter(c => c.id !== deleteTarget.id));
-      setDeleteTarget(null);
-      toast.success(`${deleteTarget.name} removed successfully`);
+      await archiveCustomer(archiveTarget.id);
+      setCustomers(cs => showArchived
+        ? cs.map(c => c.id === archiveTarget.id ? { ...c, status: 'Archived' } : c)
+        : cs.filter(c => c.id !== archiveTarget.id)
+      );
+      setArchiveTarget(null);
+      toast.success(`${archiveTarget.name} archived successfully`);
     } catch (e) {
-      toast.error(e.message, 'Failed to delete customer');
+      toast.error(e.message, 'Failed to archive customer');
     } finally {
-      setDeleting(false);
+      setArchiving(false);
     }
   };
 
@@ -97,7 +113,7 @@ export default function CustomersPage() {
 
   const openDelete = (e, customer) => {
     e.stopPropagation();
-    setDeleteTarget(customer);
+    setArchiveTarget(customer);
   };
 
   return (
@@ -116,6 +132,13 @@ export default function CustomersPage() {
           <p className="page-subtitle">Manage your investor profiles</p>
         </div>
         <div className="page-header-actions">
+          <button
+            className={`btn btn-sm ${showArchived ? 'btn-secondary' : 'btn-ghost'}`}
+            style={showArchived ? { color: 'var(--warning)', borderColor: 'var(--warning)' } : {}}
+            onClick={() => setShowArchived(v => !v)}
+          >
+            {showArchived ? 'Hide Archived' : 'Show Archived'}
+          </button>
           <Button
             variant="primary"
             icon={<UserPlus size={15} />}
@@ -126,8 +149,8 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <div style={{ marginBottom: 20 }}>
+      {/* Search + Sort */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
         <div className="search-bar">
           <Search size={15} className="search-bar-icon" />
           <input
@@ -138,6 +161,19 @@ export default function CustomersPage() {
             aria-label="Search customers"
           />
         </div>
+        <select
+          className="form-select"
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value)}
+          style={{ width: 180, height: 36, padding: '0 36px 0 12px', fontSize: 13.5 }}
+          aria-label="Sort customers"
+        >
+          <option value="name-asc">Name A → Z</option>
+          <option value="name-desc">Name Z → A</option>
+          <option value="pl-desc">P&amp;L High → Low</option>
+          <option value="pl-asc">P&amp;L Low → High</option>
+          <option value="value-desc">Value High → Low</option>
+        </select>
       </div>
 
       {/* Error */}
@@ -157,11 +193,11 @@ export default function CustomersPage() {
       )}
 
       {/* Empty */}
-      {!loading && !error && filtered.length === 0 && (
+      {!loading && !error && sorted.length === 0 && (
         <GlassCard>
           <EmptyState
             icon={<Users size={26} />}
-            title={search ? 'No customers found' : 'No customers yet'}
+            title={search ? 'No customers found' : showArchived ? 'No archived customers' : 'No customers yet'}
             description={search ? `No results for "${search}"` : 'Add your first customer to get started.'}
             action={!search ? () => { setEditTarget(null); setFormOpen(true); } : undefined}
             actionLabel="Add Customer"
@@ -170,9 +206,9 @@ export default function CustomersPage() {
       )}
 
       {/* Customer Cards */}
-      {!loading && filtered.length > 0 && (
+      {!loading && sorted.length > 0 && (
         <div className="customer-grid">
-          {filtered.map(customer => (
+          {sorted.map(customer => (
             <GlassCard
               key={customer.id}
               className="customer-card"
@@ -190,9 +226,16 @@ export default function CustomersPage() {
               </div>
 
               <div className="customer-meta">
+                <div className="customer-meta-item" style={{ gridColumn: 'span 2' }}>
+                  <div className="customer-meta-label">P / L</div>
+                  <div className={`customer-meta-value ${(customer.profitLoss ?? 0) >= 0 ? 'perf-positive' : 'perf-negative'}`} style={{ fontSize: 15, fontWeight: 700 }}>
+                    {(customer.profitLoss ?? 0) >= 0 ? '+' : ''}{formatCurrency(customer.profitLoss ?? 0)}
+                    <span style={{ fontSize: 12, fontWeight: 600, marginLeft: 6, opacity: 0.85 }}>({formatReturnPct(customer.returnPercentage ?? 0)})</span>
+                  </div>
+                </div>
                 <div className="customer-meta-item">
-                  <div className="customer-meta-label">Portfolio Value</div>
-                  <div className="customer-meta-value">{formatCurrency(customer.portfolioValue)}</div>
+                  <div className="customer-meta-label">Current Value</div>
+                  <div className="customer-meta-value">{formatCurrency(customer.currentValue ?? customer.portfolioValue)}</div>
                 </div>
                 <div className="customer-meta-item">
                   <div className="customer-meta-label">Joined</div>
@@ -243,13 +286,13 @@ export default function CustomersPage() {
       />
 
       <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
+        open={Boolean(archiveTarget)}
+        onClose={() => setArchiveTarget(null)}
         onConfirm={handleDelete}
-        title="Delete Customer"
-        message={`Are you sure you want to remove ${deleteTarget?.name}? All their investments and data will be permanently deleted.`}
-        confirmLabel="Delete Customer"
-        loading={deleting}
+        title="Archive Customer"
+        message={`Archive ${archiveTarget?.name}? Their data and trade history will be preserved. You can view archived clients by toggling 'Show Archived'.`}
+        confirmLabel="Archive"
+        loading={archiving}
       />
     </>
   );

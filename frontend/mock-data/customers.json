@@ -9,7 +9,9 @@
       "investmentGoal": "Retirement Planning",
       "joinedDate": "2025-01-15",
       "portfolioValue": 850000,
-      "status": "Active"
+      "status": "Active",
+      "notes": "Long-term retirement planning. Prefers capital preservation over growth. Review annually.",
+      "targetAllocation": { "Stocks": 30, "Bonds": 50, "Cash": 15, "Others": 5 }
     },
     {
       "id": "CUS002",
@@ -20,7 +22,9 @@
       "investmentGoal": "Wealth Growth",
       "joinedDate": "2025-02-20",
       "portfolioValue": 1250000,
-      "status": "Active"
+      "status": "Active",
+      "notes": "Building wealth over a 10-year horizon. Comfortable with moderate risk. Quarterly reviews preferred.",
+      "targetAllocation": { "Stocks": 55, "Bonds": 30, "Cash": 10, "Others": 5 }
     },
     {
       "id": "CUS003",
@@ -31,7 +35,9 @@
       "investmentGoal": "Capital Appreciation",
       "joinedDate": "2025-03-10",
       "portfolioValue": 2200000,
-      "status": "Active"
+      "status": "Active",
+      "notes": "High-growth focus with tech-heavy positions. Fully aware of volatility risk.",
+      "targetAllocation": { "Stocks": 75, "Bonds": 15, "Cash": 5, "Others": 5 }
     }
   ]
 }

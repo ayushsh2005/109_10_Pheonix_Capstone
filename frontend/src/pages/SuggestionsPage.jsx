@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Lightbulb, AlertTriangle, TrendingUp, Shuffle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Lightbulb, AlertTriangle, TrendingUp, Shuffle, ArrowRight } from 'lucide-react';
 import GlassCard from '../components/ui/GlassCard';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
@@ -20,6 +21,7 @@ const SEV_COLOR = { High: 'var(--danger)',     Medium: 'var(--warning)',    Low:
 const SEV_ORDER = { High: 0, Medium: 1, Low: 2 };
 
 export default function SuggestionsPage() {
+  const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState([]);
   const [customers,   setCustomers]   = useState([]);
   const [loading,     setLoading]     = useState(true);
@@ -147,9 +149,17 @@ export default function SuggestionsPage() {
                     {s.message}
                   </p>
                   {s.customerId && custMap[s.customerId] && (
-                    <div style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <span style={{ fontSize: 11 }}>👤</span>
-                      {custMap[s.customerId]}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                        Client: <strong style={{ color: 'var(--text-secondary)' }}>{custMap[s.customerId]}</strong>
+                      </div>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        style={{ gap: 6 }}
+                        onClick={() => navigate(`/customers/${s.customerId}`)}
+                      >
+                        View Client <ArrowRight size={12} />
+                      </button>
                     </div>
                   )}
                 </div>
