@@ -31,7 +31,6 @@ const formatYAxis = (value) => {
 export default function PerformanceChart({ data = [] }) {
   // Derive colour from the trend: green = overall profit, red = loss
   const isProfit = data.length < 2 || data[data.length - 1].value >= data[0].value;
-  const COLOR    = isProfit ? 'var(--success)' : 'var(--danger)';
   const COLOR_HEX = isProfit ? '#34C759' : '#FF3B30'; // needed for SVG gradient stops
 
   return (

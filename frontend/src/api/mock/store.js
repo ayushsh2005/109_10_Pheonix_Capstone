@@ -37,8 +37,6 @@ const computePL = (customerId) => {
 };
 
 export const mockStore = {
-  getCustomers: () => clone(customers.map(c => ({ ...c, ...computePL(c.id) }))),
-
   /* ── Dashboard ─────────────────────────────────────────────── */
   getDashboard: () => clone(dashboard),
 
