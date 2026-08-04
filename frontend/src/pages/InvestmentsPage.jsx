@@ -7,7 +7,7 @@ import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import InvestmentForm from '../components/forms/InvestmentForm';
 import { SkeletonTable } from '../components/ui/Skeleton';
-import { getInvestments, getInvestmentsByCustomer, createInvestment, updateInvestment, deleteInvestment } from '../api/services/investments';
+import { getInvestments, createInvestment, updateInvestment, deleteInvestment } from '../api/services/investments';
 import { getCustomers } from '../api/services/customers';
 import { formatCurrencyPrecise, formatCurrency, formatDate, formatReturnPct, calcInvestmentMetrics } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
@@ -44,12 +44,6 @@ export default function InvestmentsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
-  // Build customer lookup map
-  const custMap = Object.fromEntries(customers.map(c => {
-    // Find portfolio by doing it via investments' portfolioId — simplified by joining
-    return [c.id, c.name];
-  }));
 
   const ASSET_TYPES = [...new Set(investments.map(i => i.assetType))].filter(Boolean);
 

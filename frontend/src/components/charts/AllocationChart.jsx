@@ -7,7 +7,7 @@ const COLORS = ['#E60000', '#007AFF', '#34C759', '#FF9F0A', '#8E8E93'];
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
-  const { name, value, payload: p } = payload[0];
+  const { name, payload: p } = payload[0];
   return (
     <div style={{
       background: 'var(--bg-elevated)',

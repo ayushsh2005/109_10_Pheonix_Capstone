@@ -26,7 +26,7 @@ export default function AppLayout({ children }) {
   const toggleCollapsed = () => {
     setSidebarCollapsed(prev => {
       const next = !prev;
-      try { localStorage.setItem('pm_sidebar_collapsed', String(next)); } catch {}
+      try { localStorage.setItem('pm_sidebar_collapsed', String(next)); } catch { void 0; }
       return next;
     });
   };

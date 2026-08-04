@@ -17,7 +17,7 @@ function validate(f) {
   if (!f.email.trim())              errs.email = 'Email is required';
   else if (!emailRe.test(f.email))  errs.email = 'Enter a valid email address';
 
-  if (f.phone && !/^[\d\s\+\-\(\)]{7,20}$/.test(f.phone))
+  if (f.phone && !/^[\d\s+()-]{7,20}$/.test(f.phone))
     errs.phone = 'Enter a valid phone number';
 
   if (!f.riskProfile)    errs.riskProfile = 'Risk profile is required';
