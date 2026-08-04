@@ -1,3 +1,6 @@
+CREATE DATABASE IF NOT EXISTS portfolio_db;
+USE portfolio_db;
+
 CREATE TABLE customer (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
