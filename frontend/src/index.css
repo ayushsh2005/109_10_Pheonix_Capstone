@@ -403,6 +403,55 @@ img { display: block; max-width: 100%; }
 .chart-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
 .chart-subtitle { font-size: 12px; color: var(--text-secondary); margin-bottom: 20px; }
 
+/* ── Dashboard Summary ─────────────────────────────────────── */
+.dashboard-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 20px 0;
+}
+
+.dashboard-summary-item {
+  padding: 4px 24px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+
+.dashboard-summary-item:last-child {
+  border-right: none;
+}
+
+.dashboard-summary-value {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .dashboard-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 10px;
+  }
+
+  .dashboard-summary-item {
+    border-right: 1px solid var(--border);
+  }
+
+  .dashboard-summary-item:nth-child(2n) {
+    border-right: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-summary-grid {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+    padding: 14px 0;
+  }
+
+  .dashboard-summary-item {
+    border-right: none;
+    padding: 6px 16px;
+  }
+}
+
 /* ── Search ─────────────────────────────────────────────────── */
 .search-bar { position: relative; flex: 1; max-width: 320px; }
 .search-bar-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none; }
