@@ -129,11 +129,7 @@ export default function DashboardPage() {
       {/* Summary row */}
       {!loading && s && (
         <GlassCard>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            padding: '20px 0',
-          }}>
+          <div className="dashboard-summary-grid">
             <SummaryItem label="Invested Capital" value={formatCurrency(s.totalAssetsManaged)} />
             <SummaryItem label="Current Value"    value={formatCurrency(s.portfolioValue)} />
             <SummaryItem
@@ -145,7 +141,6 @@ export default function DashboardPage() {
               label="Return Rate"
               value={formatReturnPct(s.returnPercentage)}
               positive={s.returnPercentage >= 0}
-              last
             />
           </div>
         </GlassCard>
@@ -154,17 +149,16 @@ export default function DashboardPage() {
   );
 }
 
-function SummaryItem({ label, value, positive, last }) {
+function SummaryItem({ label, value, positive }) {
   return (
-    <div style={{
-      padding: '4px 24px',
-      borderRight: last ? 'none' : '1px solid var(--border)',
-      textAlign: 'center',
-    }}>
+    <div className="dashboard-summary-item">
       <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
         {label}
       </div>
-      <div style={{ fontSize: 18, fontWeight: 700, color: positive === undefined ? 'var(--text-primary)' : positive ? 'var(--success)' : 'var(--danger)' }}>
+      <div
+        className="dashboard-summary-value"
+        style={{ fontSize: 18, fontWeight: 700, color: positive === undefined ? 'var(--text-primary)' : positive ? 'var(--success)' : 'var(--danger)' }}
+      >
         {value}
       </div>
     </div>
