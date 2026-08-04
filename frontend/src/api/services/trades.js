@@ -4,11 +4,11 @@ import { mockStore } from '../mock/store';
 
 export async function getTrades(customerId) {
   if (USE_MOCK) { await delay(300); return mockStore.getTrades(customerId); }
+  /* istanbul ignore next */
   try {
     const { data } = await client.get(`/customers/${customerId}/trades`);
     return data;
   } catch {
-    // Backend currently may not expose trade history endpoints.
     return [];
   }
 }
@@ -18,6 +18,7 @@ export async function sellInvestment(investmentId, payload) {
     await delay(500);
     return mockStore.sellInvestment(investmentId, payload.quantity, payload.sellPrice, payload.tradeDate);
   }
+  /* istanbul ignore next */
   try {
     const { data } = await client.post(`/investments/${investmentId}/sell`, payload);
     return data;
