@@ -193,7 +193,7 @@ export default function CustomerDetailPage() {
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>{customer.name}</h2>
-                <Badge label={customer.status === 'Archived' ? 'Archived' : 'Active'} variant={customer.status === 'Archived' ? 'warning' : 'success'} />
+                <Badge label="Active" variant="success" />
                 <Badge label={customer.riskProfile} />
               </div>
               <div className="detail-info-grid">

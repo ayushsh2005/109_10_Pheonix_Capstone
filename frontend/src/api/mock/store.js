@@ -37,6 +37,8 @@ const computePL = (customerId) => {
 };
 
 export const mockStore = {
+  getCustomers: () => clone(customers.map(c => ({ ...c, ...computePL(c.id) }))),
+
   /* ── Dashboard ─────────────────────────────────────────────── */
   getDashboard: () => clone(dashboard),
 
@@ -69,11 +71,7 @@ export const mockStore = {
     return clone({ ...c, ...computePL(id) });
   },
 
-  archiveCustomer: (id) => {
-    customers = customers.map(c => c.id === id ? { ...c, status: 'Archived' } : c);
-  },
-
-  /* kept for backward compat — hard delete if truly needed */
+  /* ── Hard delete: removes customer and all related data ─────────────────────────────────────────────── */
   deleteCustomer: (id) => {
     const portfolio = portfolios.find(p => p.customerId === id);
     if (portfolio) {

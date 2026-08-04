@@ -8,7 +8,7 @@ import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import CustomerForm from '../components/forms/CustomerForm';
 import { Skeleton } from '../components/ui/Skeleton';
-import { getCustomers, createCustomer, updateCustomer, archiveCustomer } from '../api/services/customers';
+import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../api/services/customers';
 import { formatCurrency, formatDate, formatReturnPct, getInitials } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
 
@@ -21,24 +21,23 @@ export default function CustomersPage() {
   const [error, setError]         = useState(null);
   const [search, setSearch]       = useState('');
   const [sortBy, setSortBy]       = useState('name-asc');
-  const [showArchived, setShowArchived] = useState(false);
 
   // Form state
   const [formOpen, setFormOpen]   = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [saving, setSaving]       = useState(false);
 
-  // Archive state
-  const [archiveTarget, setArchiveTarget] = useState(null);
-  const [archiving, setArchiving] = useState(false);
+  // Delete state
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    getCustomers(showArchived)
+    getCustomers()
       .then(d => { setCustomers(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
-  }, [showArchived]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -95,19 +94,16 @@ export default function CustomersPage() {
   };
 
   const handleDelete = async () => {
-    setArchiving(true);
+    setDeleting(true);
     try {
-      await archiveCustomer(archiveTarget.id);
-      setCustomers(cs => showArchived
-        ? cs.map(c => c.id === archiveTarget.id ? { ...c, status: 'Archived' } : c)
-        : cs.filter(c => c.id !== archiveTarget.id)
-      );
-      setArchiveTarget(null);
-      toast.success(`${archiveTarget.name} archived successfully`);
+      await deleteCustomer(deleteTarget.id);
+      setCustomers(cs => cs.filter(c => c.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      toast.success(`${deleteTarget.name} removed successfully`);
     } catch (e) {
-      toast.error(e.message, 'Failed to archive customer');
+      toast.error(e.message, 'Failed to delete customer');
     } finally {
-      setArchiving(false);
+      setDeleting(false);
     }
   };
 
@@ -119,7 +115,7 @@ export default function CustomersPage() {
 
   const openDelete = (e, customer) => {
     e.stopPropagation();
-    setArchiveTarget(customer);
+    setDeleteTarget(customer);
   };
 
   return (
@@ -138,13 +134,6 @@ export default function CustomersPage() {
           <p className="page-subtitle">Manage your investor profiles</p>
         </div>
         <div className="page-header-actions">
-          <button
-            className={`btn btn-sm ${showArchived ? 'btn-secondary' : 'btn-ghost'}`}
-            style={showArchived ? { color: 'var(--warning)', borderColor: 'var(--warning)' } : {}}
-            onClick={() => setShowArchived(v => !v)}
-          >
-            {showArchived ? 'Hide Archived' : 'Show Archived'}
-          </button>
           <Button
             variant="primary"
             icon={<UserPlus size={15} />}
@@ -203,7 +192,7 @@ export default function CustomersPage() {
         <GlassCard>
           <EmptyState
             icon={<Users size={26} />}
-            title={search ? 'No customers found' : showArchived ? 'No archived customers' : 'No customers yet'}
+            title={search ? 'No customers found' : 'No customers yet'}
             description={search ? `No results for "${search}"` : 'Add your first customer to get started.'}
             action={!search ? () => { setEditTarget(null); setFormOpen(true); } : undefined}
             actionLabel="Add Customer"
@@ -292,13 +281,13 @@ export default function CustomersPage() {
       />
 
       <ConfirmDialog
-        open={Boolean(archiveTarget)}
-        onClose={() => setArchiveTarget(null)}
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title="Archive Customer"
-        message={`Archive ${archiveTarget?.name}? Their data and trade history will be preserved. You can view archived clients by toggling 'Show Archived'.`}
-        confirmLabel="Archive"
-        loading={archiving}
+        title="Delete Customer"
+        message={`Are you sure you want to remove ${deleteTarget?.name}? All their investments and data will be permanently deleted.`}
+        confirmLabel="Delete Customer"
+        loading={deleting}
       />
     </>
   );
