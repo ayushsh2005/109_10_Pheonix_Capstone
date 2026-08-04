@@ -38,6 +38,6 @@ export async function archiveCustomer(id) {
 
 export async function getPortfolio(customerId) {
   if (USE_MOCK) { await delay(200); return mockStore.getPortfolio(customerId); }
-  const { data } = await client.get(`/customers/${customerId}/portfolio`);
+  const { data } = await client.get(`/customers/${customerId}/performance`);
   return data;
 }
