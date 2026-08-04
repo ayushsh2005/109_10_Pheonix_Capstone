@@ -42,11 +42,17 @@ export default function CustomersPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = customers.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.email.toLowerCase().includes(search.toLowerCase()) ||
-    c.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const normalizedSearch = search.toLowerCase();
+  const filtered = customers.filter(c => {
+    const name = String(c.name ?? '').toLowerCase();
+    const email = String(c.email ?? '').toLowerCase();
+    const id = String(c.id ?? '').toLowerCase();
+    return (
+      name.includes(normalizedSearch) ||
+      email.includes(normalizedSearch) ||
+      id.includes(normalizedSearch)
+    );
+  });
 
   const sorted = [...filtered].sort((a, b) => {
     switch (sortBy) {
