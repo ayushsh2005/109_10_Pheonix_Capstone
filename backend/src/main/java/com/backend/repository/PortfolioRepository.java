@@ -46,7 +46,19 @@ public class PortfolioRepository {
 
     public Portfolio save(Portfolio portfolio) {
         if (portfolio.getId() == null) {
-            portfolio.setCreatedDate(LocalDateTime.now());
+            Optional<Portfolio> existing = findByCustomerId(portfolio.getCustomer().getId());
+            if (existing.isPresent()) {
+                portfolio.setId(existing.get().getId());
+                if (portfolio.getCreatedDate() == null) {
+                    portfolio.setCreatedDate(existing.get().getCreatedDate());
+                }
+            }
+        }
+
+        if (portfolio.getId() == null) {
+            if (portfolio.getCreatedDate() == null) {
+                portfolio.setCreatedDate(LocalDateTime.now());
+            }
             KeyHolder keyHolder = new GeneratedKeyHolder();
             jdbc.update(con -> {
                 PreparedStatement ps = con.prepareStatement(

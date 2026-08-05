@@ -1,5 +1,6 @@
 package com.backend.exception;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -62,6 +63,11 @@ public class GlobalExceptionHandler {
         String message = "Invalid JSON body. Expected an object with fields: "
                 + "assetName, assetType, ticker, quantity, purchasePrice, currentPrice, purchaseDate.";
         return buildResponse(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(EmptyResultDataAccessException.class)
+    public ResponseEntity<ErrorResponse> handleEmptyResult(EmptyResultDataAccessException ex, WebRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, "Resource not found", request);
     }
 
     @ExceptionHandler(Exception.class)

@@ -1,7 +1,4 @@
-CREATE DATABASE IF NOT EXISTS portfolio_db;
-USE portfolio_db;
-
-CREATE TABLE customer (
+CREATE TABLE IF NOT EXISTS customer (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -11,7 +8,7 @@ CREATE TABLE customer (
     created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE portfolio (
+CREATE TABLE IF NOT EXISTS portfolio (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     customer_id BIGINT NOT NULL,
     created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -22,7 +19,7 @@ CREATE TABLE portfolio (
         ON DELETE CASCADE
 );
 
-CREATE TABLE investment (
+CREATE TABLE IF NOT EXISTS investment (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     portfolio_id BIGINT NOT NULL,
     asset_name VARCHAR(100),

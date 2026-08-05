@@ -1,6 +1,7 @@
 package com.backend.repository;
 
 import com.backend.entity.Customer;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -51,9 +52,13 @@ public class CustomerRepository {
     }
 
     public boolean existsByEmail(String email) {
-        Integer count = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM customer WHERE email = ?", Integer.class, email);
-        return count != null && count > 0;
+        try {
+            Integer count = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM customer WHERE email = ?", Integer.class, email);
+            return count != null && count > 0;
+        } catch (EmptyResultDataAccessException ex) {
+            return false;
+        }
     }
 
     public long count() {
