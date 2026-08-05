@@ -88,14 +88,12 @@ jobs:
             sleep 2
           done
 
-      - name: Load real schema + sample data
+      - name: Load schema
         env:
           MYSQL_PWD: ${{ secrets.CI_DB_PASSWORD }}
-        # Uses the project's actual schema.sql / data.sql (not a synthetic test
-        # fixture), so CI exercises the same shape/volume of data as local dev.
+        # Load schema only — tests manage their own data via @Transactional
         run: |
           mysql -h127.0.0.1 -P3306 -uroot portfolio_db < src/main/resources/schema.sql
-          mysql -h127.0.0.1 -P3306 -uroot portfolio_db < src/main/resources/data.sql
 
       - name: Build & run tests
         env:
