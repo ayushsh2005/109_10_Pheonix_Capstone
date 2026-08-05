@@ -30,7 +30,7 @@ public class Customer {
     @Column(length = 20)
     private String phone;
 
-    @Column(name = "risk_profile", length = 30)
+    @Column(name = "risk_profile", length = 50)
     private String riskProfile;
 
     @Column(name = "investment_goal", length = 255)

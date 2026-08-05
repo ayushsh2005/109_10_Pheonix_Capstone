@@ -13,7 +13,7 @@ CREATE TABLE customer (
 
 CREATE TABLE portfolio (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    customer_id BIGINT NOT NULL,
+    customer_id BIGINT NOT NULL UNIQUE,
     created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_portfolio_customer
