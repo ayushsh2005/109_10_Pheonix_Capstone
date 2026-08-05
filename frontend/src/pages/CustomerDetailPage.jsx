@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useMemo } from 'react';
+﻿import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Pencil, Trash2, TrendingUp, TrendingDown, DollarSign, ChevronRight, History, Target } from 'lucide-react';
 import GlassCard from '../components/ui/GlassCard';
@@ -77,6 +77,27 @@ export default function CustomerDetailPage() {
   }, [id, range]);
 
   const stats = performance ?? { totalInvested: 0, currentValue: 0, profitLoss: 0, returnPercentage: 0 };
+
+  // Count-up for P&L hero on data load — uses Date.now() to avoid shadowing the performance state var
+  const [displayPL, setDisplayPL] = useState(0);
+  const [displayReturn, setDisplayReturn] = useState(0);
+  const rafRef = useRef(null);
+  useEffect(() => {
+    const target = stats.profitLoss;
+    const targetR = stats.returnPercentage;
+    const duration = 600;
+    const start = Date.now();
+    const animate = () => {
+      const p = Math.min((Date.now() - start) / duration, 1);
+      const ease = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+      setDisplayPL(target * ease);
+      setDisplayReturn(targetR * ease);
+      if (p < 1) rafRef.current = requestAnimationFrame(animate);
+    };
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [stats.profitLoss, stats.returnPercentage]);
 
   const customerAllocation = useMemo(() => {
     if (!investments.length) return [];
@@ -217,8 +238,8 @@ export default function CustomerDetailPage() {
           <div className="pl-kpi">
             <div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
-                <span className={`pl-amount ${stats.profitLoss >= 0 ? 'pl-positive' : 'pl-negative'}`}>{formatPL(stats.profitLoss)}</span>
-                <span className={`pl-pct ${stats.returnPercentage >= 0 ? 'pl-positive' : 'pl-negative'}`}>{formatReturnPct(stats.returnPercentage)}</span>
+                <span className={`pl-amount ${stats.profitLoss >= 0 ? 'pl-positive' : 'pl-negative'}`}>{formatPL(displayPL)}</span>
+                <span className={`pl-pct ${stats.returnPercentage >= 0 ? 'pl-positive' : 'pl-negative'}`}>{formatReturnPct(displayReturn)}</span>
               </div>
               <div className="pl-label">Unrealised Profit / Loss</div>
             </div>
