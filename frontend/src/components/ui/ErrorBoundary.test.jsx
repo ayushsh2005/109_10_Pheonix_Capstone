@@ -27,7 +27,7 @@ describe('ErrorBoundary — error state', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
   it('Try again button resets the error boundary', () => {
-    const { rerender } = render(
+    render(
       <ErrorBoundary><ThrowError message="Boom" /></ErrorBoundary>
     );
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();

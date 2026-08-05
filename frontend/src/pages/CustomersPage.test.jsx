@@ -9,7 +9,7 @@ jest.mock('../api/services/customers', () => ({
   deleteCustomer: jest.fn(),
 }));
 jest.mock('../context/ToastContext', () => ({ useToast: () => ({ success: jest.fn(), error: jest.fn() }) }));
-jest.mock('../components/forms/CustomerForm', () => ({ open, onClose, onSubmit, initial }) =>
+jest.mock('../components/forms/CustomerForm', () => ({ open, onClose, onSubmit }) =>
   open ? (
     <div data-testid="customer-form">
       <button onClick={() => onSubmit({ name: 'New Customer', email: 'new@test.com' })}>Submit</button>
