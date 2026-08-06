@@ -1,16 +1,13 @@
-// Declarative Jenkins pipeline: build & push images, then deploy to the VM
-// over SSH. Mirrors .github/workflows/cd.yml - pick ONE of the two in a
-// real project; both are included here since the course checklist lists
-// both GitHub Actions and Jenkins as options.
+// Declarative Jenkins pipeline: build, push, and deploy locally on the VM
+// where Jenkins itself is running.
 //
 // Required Jenkins credentials (Manage Jenkins > Credentials):
 //   ghcr-creds        (Username/Password) - GitHub username + PAT with
 //                      write:packages (build) / read:packages (deploy)
-//   vm-ssh-key         (SSH Username with private key) - deploy user on the VM
 //
-// Required Jenkins parameters / env, set in the job or a .env file loaded
-// via the EnvInject plugin:
-//   VM_HOST, VM_DEPLOY_PATH
+// Optional Jenkins environment variable:
+//   DEPLOY_DIR        absolute path to the VM directory containing
+//                     docker-compose.yml and .env
 
 pipeline {
     agent any
@@ -22,7 +19,7 @@ pipeline {
 
     environment {
         REGISTRY         = 'ghcr.io'
-        REPO_OWNER       = 'CHANGE_ME'   // github org/user, lowercase
+        REPO_OWNER       = 'neueda-learning'
         BACKEND_IMAGE    = "${REGISTRY}/${REPO_OWNER}/portfolio-backend"
         FRONTEND_IMAGE   = "${REGISTRY}/${REPO_OWNER}/portfolio-frontend"
         IMAGE_TAG        = "${env.GIT_COMMIT.take(12)}"
@@ -33,7 +30,7 @@ pipeline {
             steps { checkout scm }
         }
 
-        stage('Backend: build & test') {
+        stage('Backend build and tests') {
             steps {
                 dir('backend') {
                     sh 'chmod +x mvnw && ./mvnw -B -ntp clean verify'
@@ -44,7 +41,7 @@ pipeline {
             }
         }
 
-        stage('Frontend: lint & build') {
+        stage('Frontend build') {
             steps {
                 dir('frontend') {
                     sh 'npm ci'
@@ -54,14 +51,14 @@ pipeline {
             }
         }
 
-        stage('Docker: build images') {
+        stage('Docker build') {
             steps {
                 sh "docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} -t ${BACKEND_IMAGE}:latest ./backend"
                 sh "docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} -t ${FRONTEND_IMAGE}:latest ./frontend"
             }
         }
 
-        stage('Docker: push images') {
+        stage('Docker push') {
             when { branch 'main' }
             steps {
                 withCredentials([usernamePassword(
@@ -81,21 +78,25 @@ pipeline {
             }
         }
 
-        stage('Deploy to VM') {
+        stage('Deploy locally') {
             when { branch 'main' }
             steps {
-                sshagent(credentials: ['vm-ssh-key']) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'ghcr-creds',
+                    usernameVariable: 'GHCR_USER',
+                    passwordVariable: 'GHCR_TOKEN'
+                )]) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=accept-new "$VM_USER@$VM_HOST" '
-                            set -euo pipefail
-                            cd "'"$VM_DEPLOY_PATH"'"
-                            export IMAGE_TAG='"$IMAGE_TAG"'
-                            export BACKEND_IMAGE='"$BACKEND_IMAGE"'
-                            export FRONTEND_IMAGE='"$FRONTEND_IMAGE"'
-                            docker compose pull
-                            docker compose up -d --remove-orphans
-                            docker image prune -f
-                        '
+                        set -euo pipefail
+                        echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+                        cd "${DEPLOY_DIR:-$WORKSPACE}"
+                        export IMAGE_TAG='"$IMAGE_TAG"'
+                        export BACKEND_IMAGE='"$BACKEND_IMAGE"'
+                        export FRONTEND_IMAGE='"$FRONTEND_IMAGE"'
+                        docker compose pull
+                        docker compose up -d --remove-orphans
+                        docker image prune -f
+                        docker logout ghcr.io
                     '''
                 }
             }

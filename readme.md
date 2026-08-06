@@ -25,7 +25,7 @@
 
 <img src="https://img.shields.io/badge/Maven-Build-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white"/>
 
-<img src="https://img.shields.io/badge/GitHub_Actions-CI-2088FF?style=for-the-badge&logo=githubactions&logoColor=white"/>
+<img src="https://img.shields.io/badge/Jenkins-CD-D24939?style=for-the-badge&logo=jenkins&logoColor=white"/>
 
 </p>
 
@@ -576,7 +576,7 @@ Portfolio Manager is built using a modern full-stack technology ecosystem that e
 | 🔗 API | REST |
 | 📦 Build Tool | Maven |
 | 🌐 Version Control | Git & GitHub |
-| 🤖 CI/CD | GitHub Actions |
+| 🤖 CI/CD | Jenkins (VM-local deploy) |
 
 </div>
 
@@ -738,7 +738,7 @@ Pages
 |------|---------|
 | Git | Version Control |
 | GitHub | Repository Hosting |
-| GitHub Actions | Continuous Integration |
+| Jenkins | Build, push, and local VM deployment |
 | Maven | Dependency Management |
 | npm | Frontend Package Management |
 | Vite | Development Server |
@@ -757,7 +757,7 @@ Pages
 | Persistence | Spring Data JPA | Simplified data access |
 | Build | Maven | Dependency & lifecycle management |
 | Version Control | Git | Collaborative development |
-| CI/CD | GitHub Actions | Automated validation |
+| CI/CD | Jenkins | VM-local build, push, and deployment |
 
 ---
 
@@ -809,7 +809,7 @@ B[React Frontend]
 C[REST API]
 D[Spring Boot]
 E[Database]
-F[GitHub Actions]
+F[Jenkins on VM]
 
 A --> B
 B --> C
@@ -838,7 +838,56 @@ This technology stack combines modern frontend development with enterprise-grade
 
 ## ⚙️ Built with Modern Technologies
 
-**React • Vite • Spring Boot • Java • REST APIs • Maven • GitHub Actions**
+**React • Vite • Spring Boot • Java • REST APIs • Maven • Jenkins**
+
+---
+
+# 🚀 CI/CD Deployment (Jenkins on VM)
+
+Production deployment is executed by **Jenkins running on the deployment VM itself**.
+
+Because inbound SSH access to the VM is restricted, the repository does **not** rely on GitHub Actions SSH deployment for production releases.
+
+## ✅ Deployment Engine
+
+- Jenkins job runs on the same VM that hosts Docker Compose
+- Deployment is local (no SSH hop)
+- Images are pulled from GHCR and started with Docker Compose
+
+## 🔐 Required Jenkins Credential
+
+- `ghcr-creds` (Username/Password)
+        - Username: GitHub username
+        - Password: GitHub PAT with package permissions (read/write as needed)
+
+## 🧭 Deployment Flow
+
+```mermaid
+flowchart LR
+                A[GitHub Push] --> B[Jenkins on VM]
+                B --> C[Build backend and frontend images]
+                C --> D[Push images to GHCR]
+                D --> E[docker compose pull]
+                E --> F[docker compose up -d --remove-orphans]
+```
+
+## 🏷️ GHCR Images
+
+- `ghcr.io/neueda-learning/portfolio-backend`
+- `ghcr.io/neueda-learning/portfolio-frontend`
+
+## 🧱 Compose Image Selection
+
+Production compose uses environment-provided image/tag values:
+
+- `BACKEND_IMAGE`
+- `FRONTEND_IMAGE`
+- `IMAGE_TAG`
+
+and deploys with:
+
+- `docker compose pull`
+- `docker compose up -d --remove-orphans`
 
 </div>
 
@@ -1356,7 +1405,9 @@ Repository --> Database
 | application.properties | Spring Boot configuration |
 | schema.sql | Database schema |
 | data.sql | Seed data |
-| ci.yml | GitHub Actions workflow |
+| ci.yml | GitHub Actions CI workflow |
+| cd.yml | Disabled placeholder; production deploy is handled by Jenkins on VM |
+| Jenkinsfile | Jenkins pipeline for VM-local deployment |
 
 ---
 
