@@ -21,14 +21,10 @@ concurrency:
   cancel-in-progress: false
 
 
-env:
-  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/portfolio-backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/portfolio-frontend
-
-
 jobs:
 
   build-and-push:
+
     name: Build and push Docker images
 
     if: |
@@ -44,6 +40,8 @@ jobs:
 
     outputs:
       image_tag: ${{ steps.tag.outputs.image_tag }}
+      backend_image: ${{ steps.images.outputs.backend_image }}
+      frontend_image: ${{ steps.images.outputs.frontend_image }}
 
 
     steps:
@@ -66,7 +64,24 @@ jobs:
 
           echo "image_tag=$TAG" >> "$GITHUB_OUTPUT"
 
-          echo "Deploy tag: $TAG"
+          echo "Using image tag: $TAG"
+
+
+
+      - name: Normalize GHCR image names
+        id: images
+        shell: bash
+        run: |
+          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
+
+          BACKEND="ghcr.io/${OWNER_LC}/portfolio-backend"
+          FRONTEND="ghcr.io/${OWNER_LC}/portfolio-frontend"
+
+          echo "backend_image=$BACKEND" >> "$GITHUB_OUTPUT"
+          echo "frontend_image=$FRONTEND" >> "$GITHUB_OUTPUT"
+
+          echo "Backend: $BACKEND"
+          echo "Frontend: $FRONTEND"
 
 
 
@@ -92,8 +107,8 @@ jobs:
           push: true
 
           tags: |
-            ${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.image_tag }}
-            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ steps.images.outputs.backend_image }}:${{ steps.tag.outputs.image_tag }}
+            ${{ steps.images.outputs.backend_image }}:latest
 
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
@@ -108,17 +123,18 @@ jobs:
           push: true
 
           tags: |
-            ${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.image_tag }}
-            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ steps.images.outputs.frontend_image }}:${{ steps.tag.outputs.image_tag }}
+            ${{ steps.images.outputs.frontend_image }}:latest
 
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
 
 
 
+
   deploy:
 
-    name: Deploy to production VM
+    name: Deploy to VM
 
     needs:
       - build-and-push
@@ -130,18 +146,22 @@ jobs:
       name: production
 
 
+
     steps:
 
-
-      - name: Deploy through SSH
+      - name: Deploy over SSH
 
         uses: appleboy/ssh-action@v1.2.0
 
 
         env:
+
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
-          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
-          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
+
+          BACKEND_IMAGE: ${{ needs.build-and-push.outputs.backend_image }}
+
+          FRONTEND_IMAGE: ${{ needs.build-and-push.outputs.frontend_image }}
+
 
 
         with:
@@ -163,17 +183,16 @@ jobs:
             set -euo pipefail
 
 
-            echo "Starting deployment"
+            echo "Deploying:"
+            echo "IMAGE_TAG=$IMAGE_TAG"
+            echo "BACKEND_IMAGE=$BACKEND_IMAGE"
+            echo "FRONTEND_IMAGE=$FRONTEND_IMAGE"
 
-            echo "Image tag:"
-            echo "$IMAGE_TAG"
 
 
             cd "${{ secrets.VM_DEPLOY_PATH }}"
 
 
-
-            echo "Logging into GHCR"
 
             echo "${{ secrets.GHCR_PULL_TOKEN }}" | docker login ghcr.io \
               -u "${{ secrets.GHCR_USERNAME }}" \
@@ -181,30 +200,25 @@ jobs:
 
 
 
-            echo "Pulling latest images"
-
             export IMAGE_TAG
             export BACKEND_IMAGE
             export FRONTEND_IMAGE
 
 
+
             docker compose pull
 
-
-
-            echo "Restarting services"
 
             docker compose up -d --remove-orphans
 
 
-
-            echo "Cleaning unused images"
 
             docker image prune -f
 
 
 
             docker logout ghcr.io
+
 
 
             echo "Deployment completed successfully"
