@@ -186,14 +186,14 @@ class DtoAndExceptionCoverageTest {
         PortfolioPerformanceDTO dto = new PortfolioPerformanceDTO();
         dto.setCustomerId(1L);
         dto.setCustomerName("Alice");
-        dto.setTotalInvestment(new BigDecimal("2000.00"));
+        dto.setTotalInvested(new BigDecimal("2000.00"));
         dto.setCurrentValue(new BigDecimal("2200.00"));
         dto.setProfitLoss(new BigDecimal("200.00"));
         dto.setReturnPercentage(10.0);
 
         assertThat(dto.getCustomerId()).isEqualTo(1L);
         assertThat(dto.getCustomerName()).isEqualTo("Alice");
-        assertThat(dto.getTotalInvestment()).isEqualByComparingTo(new BigDecimal("2000.00"));
+        assertThat(dto.getTotalInvested()).isEqualByComparingTo(new BigDecimal("2000.00"));
         assertThat(dto.getCurrentValue()).isEqualByComparingTo(new BigDecimal("2200.00"));
         assertThat(dto.getProfitLoss()).isEqualByComparingTo(new BigDecimal("200.00"));
         assertThat(dto.getReturnPercentage()).isEqualTo(10.0);

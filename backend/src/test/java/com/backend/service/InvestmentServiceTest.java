@@ -34,6 +34,9 @@ class InvestmentServiceTest {
     @Mock
     private PortfolioRepository portfolioRepository;
 
+    @Mock
+    private TradeService tradeService;
+
     @InjectMocks
     private InvestmentService investmentService;
 
