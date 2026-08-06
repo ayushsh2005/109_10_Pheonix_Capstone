@@ -1,16 +1,13 @@
-// Declarative Jenkins pipeline: build & push images, then deploy to the VM
-// over SSH. Mirrors .github/workflows/cd.yml - pick ONE of the two in a
-// real project; both are included here since the course checklist lists
-// both GitHub Actions and Jenkins as options.
+// Declarative Jenkins pipeline: build, push, and deploy locally on the VM
+// where Jenkins itself is running.
 //
 // Required Jenkins credentials (Manage Jenkins > Credentials):
 //   ghcr-creds        (Username/Password) - GitHub username + PAT with
 //                      write:packages (build) / read:packages (deploy)
-//   vm-ssh-key         (SSH Username with private key) - deploy user on the VM
 //
-// Required Jenkins parameters / env, set in the job or a .env file loaded
-// via the EnvInject plugin:
-//   VM_HOST, VM_DEPLOY_PATH
+// Optional Jenkins environment variable:
+//   DEPLOY_DIR        absolute path to the VM directory containing
+//                     docker-compose.yml and .env
 
 pipeline {
     agent any
@@ -21,11 +18,11 @@ pipeline {
     }
 
     environment {
-        REGISTRY        = 'ghcr.io'
-        REPO_OWNER      = 'neueda-learning'
-        BACKEND_IMAGE   = "${REGISTRY}/${REPO_OWNER}/portfolio-backend"
-        FRONTEND_IMAGE  = "${REGISTRY}/${REPO_OWNER}/portfolio-frontend"
-        IMAGE_TAG       = "${env.GIT_COMMIT.take(12)}"
+        REGISTRY         = 'ghcr.io'
+        REPO_OWNER       = 'neueda-learning'
+        BACKEND_IMAGE    = "${REGISTRY}/${REPO_OWNER}/portfolio-backend"
+        FRONTEND_IMAGE   = "${REGISTRY}/${REPO_OWNER}/portfolio-frontend"
+        IMAGE_TAG        = "${env.GIT_COMMIT.take(12)}"
     }
 
     stages {
@@ -35,7 +32,6 @@ pipeline {
                 checkout scm
             }
         }
-
 
         stage('Backend build and tests') {
             steps {
@@ -60,7 +56,6 @@ pipeline {
             }
         }
 
-
         stage('Frontend build') {
             steps {
                 dir('frontend') {
@@ -74,7 +69,6 @@ pipeline {
                 }
             }
         }
-
 
         stage('Docker build') {
             steps {
@@ -92,12 +86,8 @@ pipeline {
             }
         }
 
-
         stage('Docker push') {
-            when {
-                branch 'main'
-            }
-
+            when { branch 'main' }
             steps {
                 withCredentials([
                     usernamePassword(
@@ -123,27 +113,27 @@ pipeline {
             }
         }
 
-
         stage('Deploy locally') {
-            when {
-                branch 'main'
-            }
-
+            when { branch 'main' }
             steps {
-                sh '''
-                    set -e
-
-                    cd /opt/portfolio-manager
-
-                    export IMAGE_TAG=${IMAGE_TAG}
-                    export BACKEND_IMAGE=${BACKEND_IMAGE}
-                    export FRONTEND_IMAGE=${FRONTEND_IMAGE}
-
-                    docker compose pull
-                    docker compose up -d --remove-orphans
-
-                    docker image prune -f
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: 'ghcr-creds',
+                    usernameVariable: 'GHCR_USER',
+                    passwordVariable: 'GHCR_TOKEN'
+                )]) {
+                    sh '''
+                        set -euo pipefail
+                        echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+                        cd "${DEPLOY_DIR:-$WORKSPACE}"
+                        export IMAGE_TAG='"$IMAGE_TAG"'
+                        export BACKEND_IMAGE='"$BACKEND_IMAGE"'
+                        export FRONTEND_IMAGE='"$FRONTEND_IMAGE"'
+                        docker compose pull
+                        docker compose up -d --remove-orphans
+                        docker image prune -f
+                        docker logout ghcr.io
+                    '''
+                }
             }
         }
     }
