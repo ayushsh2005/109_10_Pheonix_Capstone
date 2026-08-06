@@ -11,10 +11,6 @@ CREATE TABLE IF NOT EXISTS customer (
     target_allocation TEXT
 );
 
--- Add missing columns to customer if they were not present in the initial JPA-created table
-ALTER TABLE customer ADD COLUMN target_allocation TEXT;
-ALTER TABLE customer MODIFY COLUMN notes VARCHAR(1000);
-
 CREATE TABLE IF NOT EXISTS portfolio (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     customer_id BIGINT NOT NULL,
