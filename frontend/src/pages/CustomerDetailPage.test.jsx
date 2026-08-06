@@ -11,6 +11,7 @@ jest.mock('../api/services/investments',  () => ({
   deleteInvestment:         jest.fn(),
 }));
 jest.mock('../api/services/suggestions',  () => ({ getSuggestionsByCustomer: jest.fn() }));
+jest.mock('../api/services/aiSuggestions', () => ({ getAiSuggestions: jest.fn() }));
 jest.mock('../api/services/performance',  () => ({ getCustomerPerformance: jest.fn() }));
 jest.mock('../api/services/trades',       () => ({ getTrades: jest.fn(), sellInvestment: jest.fn() }));
 
@@ -25,6 +26,7 @@ jest.mock('../context/ToastContext', () => ({ useToast: () => mockToast }));
 import { getCustomer }                                         from '../api/services/customers';
 import { getInvestmentsByCustomer, deleteInvestment }         from '../api/services/investments';
 import { getSuggestionsByCustomer }                           from '../api/services/suggestions';
+import { getAiSuggestions }                                   from '../api/services/aiSuggestions';
 import { getCustomerPerformance }                             from '../api/services/performance';
 import { getTrades }                                          from '../api/services/trades';
 
@@ -71,6 +73,9 @@ beforeEach(() => {
   getCustomer.mockResolvedValue(mockCustomer);
   getInvestmentsByCustomer.mockResolvedValue([mockInvestment]);
   getSuggestionsByCustomer.mockResolvedValue([mockSuggestion]);
+  getAiSuggestions.mockResolvedValue({
+    customerId: 'CUS001', summary: 'AI summary', suggestions: ['AI suggestion'], riskLevel: 'MEDIUM', source: 'AI',
+  });
   getCustomerPerformance.mockResolvedValue(mockPerformance);
   getTrades.mockResolvedValue([mockTrade]);
 });
@@ -264,7 +269,7 @@ describe('CustomerDetailPage — suggestions', () => {
   it('renders suggestions section when suggestions exist', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText(/insights/i)).toBeInTheDocument();
+      expect(screen.getByText('Insights & Suggestions')).toBeInTheDocument();
     });
   });
 
@@ -279,7 +284,7 @@ describe('CustomerDetailPage — suggestions', () => {
     getSuggestionsByCustomer.mockResolvedValue([]);
     renderPage();
     await waitFor(() => {
-      expect(screen.queryByText(/insights/i)).not.toBeInTheDocument();
+      expect(screen.queryByText('Insights & Suggestions')).not.toBeInTheDocument();
     });
   });
 });
