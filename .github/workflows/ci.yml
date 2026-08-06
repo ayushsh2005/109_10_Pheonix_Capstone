@@ -59,6 +59,10 @@ jobs:
         run: chmod +x mvnw
 
       - name: Build & run tests
+        env:
+          # Force backend tests onto isolated H2 config from
+          # src/test/resources/application-test.properties.
+          SPRING_PROFILES_ACTIVE: test
         run: ./mvnw -B -ntp clean verify
 
       - name: Upload test reports
