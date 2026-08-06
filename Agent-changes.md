@@ -139,3 +139,139 @@
 - **Loading dots** — `.loading-dots` utility component style
 - **Page loading bar** — `.page-loading-bar` fixed top bar utility
 - **Focus ring** — `:focus-visible` accessible outline using `--primary` colour
+
+---
+
+## Market Data & Gemini AI Integration
+
+> Based on `MARKET_DATA_INTEGRATION_GEMINI.md`. Implements Phase 1 (Yahoo Finance market
+> data) and Phase 2 (Gemini AI suggestions), following the existing layered
+> package structure (`controller/`, `service/`, `dto/`, plus new `client/` and
+> `scheduler/` packages) rather than the doc's suggested `market/`/`ai/`
+> feature-folder layout, to stay consistent with the rest of the codebase.
+
+### Status: ✅ Implemented (Phase 1 & 2) — Phase 3 (caching/real-time/advanced analytics) not started
+
+### Backend — Market Data (Yahoo Finance)
+
+- **`client/YahooFinanceClient.java`** *(new)* — Calls the key-free Yahoo Finance
+  `chart` endpoint via `java.net.http.HttpClient`, with configurable timeout and
+  retry count. Parses `chart.result[0].meta.regularMarketPrice` from the JSON
+  response. Returns `Optional.empty()` on any failure (timeout, non-200,
+  malformed body) instead of throwing.
+- **`service/MarketPriceService.java`** *(new)* — Converts DB tickers (e.g.
+  `RELIANCE`) to Yahoo's NSE format (`RELIANCE.NS`) and delegates to
+  `YahooFinanceClient`.
+- **`controller/MarketController.java`** *(new)* — `GET /market/{ticker}` →
+  `MarketPriceDTO`. Returns HTTP 503 with `success:false` when the price can't
+  be fetched (per the doc's error-handling rules).
+- **`dto/MarketPriceDTO.java`** *(new)* — `ticker, price, success, message`.
+- **`scheduler/MarketPriceScheduler.java`** *(new)* — `@Scheduled` job (default
+  every 5 minutes, configurable via `market.price.refresh-rate-ms`) that walks
+  every `Investment`, refreshes `currentPrice` from Yahoo Finance, and **leaves
+  the existing price untouched** when a fetch fails, so portfolio valuations
+  never blank out on an upstream outage.
+- **`BackendApplication.java`** — added `@EnableScheduling` to activate the
+  scheduler.
+- **`application.properties`** — added `market.yahoo.base-url`,
+  `market.request.timeout-seconds` (default 5s), `market.request.retries`
+  (default 2), `market.price.refresh-rate-ms` (default 300000ms / 5 min).
+
+### Backend — Gemini AI Suggestions
+
+- **`client/GeminiClient.java`** *(new)* — Calls the Gemini `generateContent`
+  REST API (`gemini-2.0-flash` model) via `java.net.http.HttpClient`.
+  `isConfigured()` returns false when `gemini.api.key` is blank, so callers can
+  skip straight to the rule-based fallback without making a network call.
+- **`service/AiSuggestionService.java`** *(new)* — Builds a prompt from the
+  customer's risk profile, investment goal, and current holdings; asks Gemini
+  to respond with strict JSON (`summary`, `suggestions[]`, `riskLevel`); parses
+  the response (stripping markdown code fences defensively). **Falls back** to
+  the existing rule-based `SuggestionService` whenever Gemini is unconfigured,
+  times out, errors, or returns something unparseable — response `source` is
+  `"AI"` or `"RULE_BASED"` accordingly so the frontend can label it.
+- **`controller/AiSuggestionController.java`** *(new)* — `GET
+  /customers/{customerId}/ai-suggestions` → `AiSuggestionResponseDTO`. Kept as
+  a **new, separate endpoint** from the existing `GET
+  /customers/{id}/suggestions` (rule-based) so the existing `SuggestionService`
+  /`SuggestionController` and their tests are untouched.
+- **`dto/AiSuggestionResponseDTO.java`** *(new)* — `customerId, summary,
+  suggestions[], riskLevel, source`.
+- **`application.properties`** — added `gemini.api.key` (reads
+  `GEMINI_API_KEY` env var, blank by default ⇒ AI disabled, rule-based fallback
+  always used), `gemini.api.url`, `gemini.request.timeout-seconds`.
+
+  ⚠️ **Action needed:** set the `GEMINI_API_KEY` environment variable (or
+  `gemini.api.key` in `application.properties`) to enable real AI-generated
+  suggestions. Without it, `/ai-suggestions` transparently returns rule-based
+  results with `source: "RULE_BASED"`.
+
+### Frontend
+
+- **`api/services/market.js`** *(new)* — `getMarketPrice(ticker)`, calls
+  `GET /market/{ticker}` (or mock store in mock mode).
+- **`api/services/aiSuggestions.js`** *(new)* — `getAiSuggestions(customerId)`,
+  calls `GET /customers/{id}/ai-suggestions` (or mock store in mock mode).
+- **`api/mock/store.js`** — added `getMarketPrice()` (echoes an investment's
+  `currentPrice` by ticker) and `getAiSuggestions()` (derives a mocked
+  AI-style summary/suggestions/riskLevel from existing mock suggestions data)
+  so the UI works end-to-end with `VITE_USE_MOCK=true`.
+- **`pages/CustomerDetailPage.jsx`** — added an **"AI Portfolio Insights"**
+  card above the existing rule-based "Insights & Suggestions" card, with a
+  "Generate Insights" button that calls `getAiSuggestions` on demand (not
+  auto-loaded, to avoid unnecessary Gemini calls), showing the risk badge,
+  summary paragraph, suggestion bullets, and whether the result came from
+  Gemini or the rule-based fallback.
+- Added Jest tests: `market.test.js`, `aiSuggestions.test.js`.
+
+### Not yet implemented (Phase 3 / future work from the design doc)
+
+- Redis caching of market prices, WebSocket-based real-time price pushes,
+  broker API integration.
+- `portfolio_suggestion` history table (persisting past AI suggestions).
+- News sentiment analysis / risk scoring / personalized recommendations.
+- A dedicated "Live Price" UI affordance on the Investments page wired to
+  `getMarketPrice` (service exists; not yet surfaced in a component).
+
+### Gemini end-to-end verification (post-implementation)
+
+After the user added a real `GEMINI_API_KEY` to a root-level `.env` file, the
+integration was verified end-to-end by actually running the backend and
+calling `GET /customers/1/ai-suggestions`:
+
+- **Security fix**: an external edit had put the raw API key directly into
+  the git-tracked `application.properties` (instead of the
+  `${GEMINI_API_KEY:}` placeholder). Reverted immediately — secrets must
+  never live in tracked files.
+- **`config/DotenvEnvironmentPostProcessor.java`** *(new)* — loads a root-level
+  `.env` file (checks `./.env` then `../.env`, since Maven runs from
+  `backend/`) into the Spring `Environment` so `${GEMINI_API_KEY:}` resolves
+  without exporting an OS environment variable. Logs
+  `[dotenv] Loaded N properties from <path> (keys: [...])` to stdout on
+  startup (never logs the value).
+- **Bug found & fixed**: the processor was initially registered via
+  `META-INF/spring/org.springframework.boot.env.EnvironmentPostProcessor.imports`
+  implementing `org.springframework.boot.env.EnvironmentPostProcessor`. In
+  **Spring Boot 4.1.0 this interface/registration moved** to
+  `org.springframework.boot.EnvironmentPostProcessor`, registered via
+  `META-INF/spring.factories` (confirmed by inspecting Boot's own jar — its
+  built-in post processors are listed there under the new key). The old
+  registration silently never ran, so `GEMINI_API_KEY` was never loaded and
+  every `/ai-suggestions` call fell back to `RULE_BASED` with **no log
+  output at all** (since `GeminiClient` was never even called). Fixed by
+  switching the import to `org.springframework.boot.EnvironmentPostProcessor`
+  and registering via `META-INF/spring.factories`.
+- **Confirmed working after the fix**: startup log shows
+  `[dotenv] Loaded 1 property ... (keys: [GEMINI_API_KEY])`, and calling
+  `/customers/1/ai-suggestions` produced a real
+  `com.backend.client.GeminiClient : Gemini API returned status 429: ...`
+  warning (Gemini was actually called), followed by a graceful fallback —
+  the response still returned `"source": "RULE_BASED"` because the
+  provided key's Google Cloud project has **zero free-tier quota**
+  (`RESOURCE_EXHAUSTED`, `generate_content_free_tier_requests`, limit 0) for
+  `gemini-2.0-flash`. This proves both (a) the wiring/fallback logic works
+  exactly as designed, and (b) the key itself is valid but needs billing
+  enabled or a different key/model with available quota to actually produce
+  `source: "AI"`.
+- Full backend test suite re-run after the fix — still green.
+

@@ -1,0 +1,5 @@
+# Registers DotenvEnvironmentPostProcessor so a root-level .env file (see
+# .gitignore) is loaded into the Spring Environment before property
+# placeholders like ${GEMINI_API_KEY:} are resolved.
+org.springframework.boot.EnvironmentPostProcessor=\
+com.backend.config.DotenvEnvironmentPostProcessor

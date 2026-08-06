@@ -12,3 +12,15 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 
 app.cors.allowed-origins=http://localhost:5173
+
+# --- Market data (Yahoo Finance) ---
+market.yahoo.base-url=https://query1.finance.yahoo.com/v8/finance/chart
+market.request.timeout-seconds=5
+market.request.retries=2
+market.price.refresh-rate-ms=300000
+
+# --- Gemini AI suggestions ---
+# Leave blank to disable AI suggestions and always use the rule-based fallback.
+gemini.api.key=${GEMINI_API_KEY:}
+gemini.api.url=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+gemini.request.timeout-seconds=5

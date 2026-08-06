@@ -182,6 +182,35 @@ export const mockStore = {
   getSuggestionsByCustomer: (customerId) =>
     clone(suggestions.filter(s => s.customerId === customerId)),
 
+  /* ── AI Suggestions (Gemini, mocked) ─────────────────────────── */
+  getAiSuggestions: (customerId) => {
+    const custSuggestions = suggestions.filter(s => s.customerId === customerId);
+    const messages = custSuggestions.map(s => s.message);
+    const riskLevel = custSuggestions.some(s => s.severity === 'High') ? 'HIGH'
+      : custSuggestions.some(s => s.severity === 'Medium') ? 'MEDIUM' : 'LOW';
+    return clone({
+      customerId,
+      summary: messages.length
+        ? 'This portfolio shows some concentration and risk points worth reviewing.'
+        : 'This portfolio looks well diversified with no immediate concerns.',
+      suggestions: messages,
+      riskLevel,
+      source: 'AI',
+    });
+  },
+
+  /* ── Market Data (Yahoo Finance, mocked) ─────────────────────── */
+  getMarketPrice: (ticker) => {
+    const inv = investments.find(i => (i.ticker || '').toUpperCase() === (ticker || '').toUpperCase());
+    const price = inv ? inv.currentPrice : null;
+    return clone({
+      ticker: (ticker || '').toUpperCase(),
+      price,
+      success: price !== null && price !== undefined,
+      message: price !== null && price !== undefined ? null : `Market data temporarily unavailable for ${ticker}`,
+    });
+  },
+
   /* ── Performance ─────────────────────────────────────────────── */
   getCustomerPerformance: (customerId, range = '6M') => {
     const { totalInvested, currentValue, profitLoss, returnPercentage } = computePL(customerId);
