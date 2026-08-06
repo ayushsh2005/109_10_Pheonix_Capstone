@@ -34,6 +34,9 @@ public class CustomerRepository {
         c.setInvestmentGoal(rs.getString("investment_goal"));
         Timestamp ts = rs.getTimestamp("created_date");
         c.setCreatedDate(ts != null ? ts.toLocalDateTime() : null);
+        c.setStatus(rs.getString("status"));
+        c.setNotes(rs.getString("notes"));
+        c.setTargetAllocation(rs.getString("target_allocation"));
         return c;
     };
 
@@ -72,7 +75,7 @@ public class CustomerRepository {
             KeyHolder keyHolder = new GeneratedKeyHolder();
             jdbc.update(con -> {
                 PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO customer (name, email, phone, risk_profile, investment_goal, created_date) VALUES (?,?,?,?,?,?)",
+                        "INSERT INTO customer (name, email, phone, risk_profile, investment_goal, created_date, status, notes, target_allocation) VALUES (?,?,?,?,?,?,?,?,?)",
                         new String[]{"id"});
                 ps.setString(1, customer.getName());
                 ps.setString(2, customer.getEmail());
@@ -80,19 +83,28 @@ public class CustomerRepository {
                 ps.setString(4, customer.getRiskProfile());
                 ps.setString(5, customer.getInvestmentGoal());
                 ps.setTimestamp(6, Timestamp.valueOf(customer.getCreatedDate()));
+                ps.setString(7, customer.getStatus() != null ? customer.getStatus() : "Active");
+                ps.setString(8, customer.getNotes());
+                ps.setString(9, customer.getTargetAllocation());
                 return ps;
             }, keyHolder);
             customer.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         } else {
             jdbc.update(
-                    "UPDATE customer SET name=?, email=?, phone=?, risk_profile=?, investment_goal=? WHERE id=?",
+                    "UPDATE customer SET name=?, email=?, phone=?, risk_profile=?, investment_goal=?, status=?, notes=?, target_allocation=? WHERE id=?",
                     customer.getName(), customer.getEmail(), customer.getPhone(),
-                    customer.getRiskProfile(), customer.getInvestmentGoal(), customer.getId());
+                    customer.getRiskProfile(), customer.getInvestmentGoal(),
+                    customer.getStatus() != null ? customer.getStatus() : "Active",
+                    customer.getNotes(), customer.getTargetAllocation(), customer.getId());
         }
         return customer;
     }
 
     public void delete(Customer customer) {
         jdbc.update("DELETE FROM customer WHERE id = ?", customer.getId());
+    }
+
+    public void updateStatus(Long id, String status) {
+        jdbc.update("UPDATE customer SET status = ? WHERE id = ?", status, id);
     }
 }

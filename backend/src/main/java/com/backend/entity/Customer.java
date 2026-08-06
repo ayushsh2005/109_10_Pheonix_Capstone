@@ -12,6 +12,10 @@ public class Customer {
     private String investmentGoal;
     private LocalDateTime createdDate;
     private Portfolio portfolio;
+    private String status;
+    private String notes;
+    /** Raw JSON string, e.g. {"Stocks":40,"Bonds":30,"Cash":20,"Others":10} */
+    private String targetAllocation;
 
     public Customer() {
     }
@@ -79,6 +83,30 @@ public class Customer {
 
     public void setPortfolio(Portfolio portfolio) {
         this.portfolio = portfolio;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public String getTargetAllocation() {
+        return targetAllocation;
+    }
+
+    public void setTargetAllocation(String targetAllocation) {
+        this.targetAllocation = targetAllocation;
     }
 
 }

@@ -43,7 +43,24 @@ export async function deleteCustomer(id) {
 export async function getPortfolio(customerId) {
   if (USE_MOCK) { await delay(200); return mockStore.getPortfolio(customerId); }
   /* istanbul ignore next */
-  const { data } = await client.get(`/customers/${customerId}/performance`);
+  const { data } = await client.get(`/customers/${customerId}/portfolio`);
   /* istanbul ignore next */
   return data;
 }
+
+export async function archiveCustomer(id) {
+  if (USE_MOCK) { await delay(300); return mockStore.updateCustomer(id, { status: 'Archived' }); }
+  /* istanbul ignore next */
+  const { data } = await client.post(`/customers/${id}/archive`);
+  /* istanbul ignore next */
+  return data;
+}
+
+export async function restoreCustomer(id) {
+  if (USE_MOCK) { await delay(300); return mockStore.updateCustomer(id, { status: 'Active' }); }
+  /* istanbul ignore next */
+  const { data } = await client.post(`/customers/${id}/restore`);
+  /* istanbul ignore next */
+  return data;
+}
+

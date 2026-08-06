@@ -2,7 +2,7 @@
 -- CUSTOMERS
 -- =========================
 
-INSERT INTO customer (name, email, phone, risk_profile, investment_goal) VALUES
+INSERT IGNORE INTO customer (name, email, phone, risk_profile, investment_goal) VALUES
 ('Rahul Sharma', 'rahul.sharma@gmail.com', '9876543210', 'Aggressive', 'Long-term Wealth Creation'),
 ('Priya Nair', 'priya.nair@gmail.com', '9876543211', 'Moderate', 'Retirement Planning'),
 ('Amit Verma', 'amit.verma@gmail.com', '9876543212', 'Conservative', 'Capital Preservation'),
@@ -18,7 +18,7 @@ INSERT INTO customer (name, email, phone, risk_profile, investment_goal) VALUES
 -- PORTFOLIOS
 -- =========================
 
-INSERT INTO portfolio (customer_id) VALUES
+INSERT IGNORE INTO portfolio (customer_id) VALUES
 (1),(2),(3),(4),(5),
 (6),(7),(8),(9),(10);
 
@@ -26,7 +26,7 @@ INSERT INTO portfolio (customer_id) VALUES
 -- INVESTMENTS
 -- =========================
 
-INSERT INTO investment
+INSERT IGNORE INTO investment
 (portfolio_id, asset_name, asset_type, ticker, quantity, purchase_price, current_price, purchase_date)
 VALUES
 
