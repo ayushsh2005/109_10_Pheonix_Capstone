@@ -1,0 +1,114 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag to build & deploy (defaults to the commit SHA)"
+        required: false
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+env:
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/portfolio-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/portfolio-frontend
+
+jobs:
+  build-and-push:
+    name: Build & push images
+    # Only deploy off a green CI run on main, or a manual trigger.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Compute image tag
+        id: tag
+        run: |
+          TAG="${{ github.event.inputs.image_tag }}"
+          if [ -z "$TAG" ]; then TAG="${{ github.event.workflow_run.head_sha || github.sha }}"; fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.BACKEND_IMAGE }}:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+  deploy:
+    name: Deploy to VM
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    # Configure a "production" Environment in repo Settings to gate this
+    # behind manual approval / restrict which branches can deploy.
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.tag }}
+          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
+          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_PORT }}
+          envs: IMAGE_TAG,BACKEND_IMAGE,FRONTEND_IMAGE
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VM_DEPLOY_PATH }}"
+
+            # A read:packages-scoped PAT stored on the VM's own .env -
+            # never printed, never passed as a CLI arg.
+            set +x
+            echo "${{ secrets.GHCR_PULL_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            set -x
+
+            export IMAGE_TAG BACKEND_IMAGE FRONTEND_IMAGE
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
+            docker logout ghcr.io
