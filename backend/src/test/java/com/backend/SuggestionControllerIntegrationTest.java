@@ -65,10 +65,9 @@ class SuggestionControllerIntegrationTest {
     }
 
     @Test
-    void customerSuggestions_forUnknownAndEmptyCustomer_areEmpty() throws Exception {
+        void customerSuggestions_forUnknownAndEmptyCustomer_coversNotFoundAndEmpty() throws Exception {
         mockMvc.perform(get("/customers/99999/suggestions"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                                .andExpect(status().isNotFound());
 
         Long customerId = createCustomerWithPortfolio("empty.user@example.com", "Moderate");
 

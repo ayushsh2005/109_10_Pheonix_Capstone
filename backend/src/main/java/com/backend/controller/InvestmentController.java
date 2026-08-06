@@ -167,7 +167,7 @@ public class InvestmentController {
         try {
             // Accept clients that send JSON payloads with text/plain content type.
             return objectMapper.readValue(requestBody, InvestmentRequestDTO.class);
-        } catch (RuntimeException ex) {
+        } catch (Exception ex) {
             throw new IllegalArgumentException("Invalid request body. Expected JSON payload.");
         }
     }

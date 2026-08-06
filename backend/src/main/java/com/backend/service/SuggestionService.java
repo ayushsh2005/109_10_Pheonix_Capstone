@@ -3,8 +3,10 @@ package com.backend.service;
 import com.backend.dto.SuggestionDTO;
 import com.backend.entity.Customer;
 import com.backend.entity.Investment;
+import com.backend.exception.CustomerNotFoundException;
 import com.backend.repository.CustomerRepository;
 import com.backend.repository.InvestmentRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,11 +21,14 @@ import java.util.stream.Collectors;
 @Service
 public class SuggestionService {
 
-    private static final Map<String, Double> RISK_THRESHOLDS = Map.of(
-            "Conservative", 40.0,
-            "Moderate", 70.0,
-            "Aggressive", 100.0
-    );
+    @Value("${suggestions.risk-thresholds.conservative:40.0}")
+    private double conservativeThreshold = 40.0;
+
+    @Value("${suggestions.risk-thresholds.moderate:70.0}")
+    private double moderateThreshold = 70.0;
+
+    @Value("${suggestions.risk-thresholds.aggressive:100.0}")
+    private double aggressiveThreshold = 100.0;
 
     private final CustomerRepository customerRepository;
     private final InvestmentRepository investmentRepository;
@@ -44,9 +49,9 @@ public class SuggestionService {
 
     @Transactional(readOnly = true)
     public List<SuggestionDTO> getSuggestionsByCustomer(Long customerId) {
-        return customerRepository.findById(customerId)
-                .map(this::buildSuggestions)
-                .orElse(List.of());
+        Customer customer = customerRepository.findById(customerId)
+            .orElseThrow(() -> new CustomerNotFoundException(customerId));
+        return buildSuggestions(customer);
     }
 
     private List<SuggestionDTO> buildSuggestions(Customer customer) {
@@ -88,7 +93,7 @@ public class SuggestionService {
                 .multiply(BigDecimal.valueOf(100))
                 .divide(totalValue, 2, RoundingMode.HALF_UP).doubleValue();
 
-        double riskThreshold = RISK_THRESHOLDS.getOrDefault(customer.getRiskProfile(), 100.0);
+        double riskThreshold = getRiskThreshold(customer.getRiskProfile());
         if (stockPercentage > riskThreshold) {
             suggestions.add(new SuggestionDTO("SUG-" + customer.getId() + "-" + counter++, customer.getId(),
                     "Risk", "High",
@@ -115,5 +120,14 @@ public class SuggestionService {
         }
 
         return suggestions;
+    }
+
+    private double getRiskThreshold(String riskProfile) {
+        return switch (riskProfile) {
+            case "Conservative" -> conservativeThreshold;
+            case "Moderate" -> moderateThreshold;
+            case "Aggressive" -> aggressiveThreshold;
+            default -> 100.0;
+        };
     }
 }

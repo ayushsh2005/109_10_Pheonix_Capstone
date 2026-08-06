@@ -43,26 +43,6 @@ jobs:
       run:
         working-directory: backend
 
-    env:
-      # Generated fresh for this job run only — never stored, never logged.
-      # Falls back to a repo/org secret (CI_DB_PASSWORD) if you'd rather pin one,
-      # but a random per-run password means there's nothing meaningful to leak.
-      DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
-
-    services:
-      mysql:
-        image: mysql:8
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
-          MYSQL_DATABASE: portfolio_db
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost -uroot -p$MYSQL_ROOT_PASSWORD"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,33 +58,7 @@ jobs:
       - name: Grant execute permission to mvnw
         run: chmod +x mvnw
 
-      - name: Wait for MySQL
-        env:
-          MYSQL_PWD: ${{ secrets.CI_DB_PASSWORD }}
-        run: |
-          for i in $(seq 1 30); do
-            mysqladmin ping -h127.0.0.1 -P3306 -uroot --silent && break
-            echo "waiting for mysql..."
-            sleep 2
-          done
-
-      - name: Load real schema + sample data
-        env:
-          MYSQL_PWD: ${{ secrets.CI_DB_PASSWORD }}
-        # Uses the project's actual schema.sql / data.sql (not a synthetic test
-        # fixture), so CI exercises the same shape/volume of data as local dev.
-        run: |
-          mysql -h127.0.0.1 -P3306 -uroot portfolio_db < src/main/resources/schema.sql
-          mysql -h127.0.0.1 -P3306 -uroot portfolio_db < src/main/resources/data.sql
-
       - name: Build & run tests
-        env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/portfolio_db
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
-          # Schema is already loaded above from the real schema.sql — tell
-          # Hibernate to just check it matches the entities, not manage it.
-          SPRING_JPA_HIBERNATE_DDL_AUTO: validate
         run: ./mvnw -B -ntp clean verify
 
       - name: Upload test reports

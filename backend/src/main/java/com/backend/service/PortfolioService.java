@@ -152,7 +152,10 @@ public class PortfolioService {
     }
 
     private double returnPercentage(BigDecimal totalInvestment, BigDecimal profitLoss) {
-        if (totalInvestment.compareTo(BigDecimal.ZERO) <= 0) {
+                if (totalInvestment == null || totalInvestment.compareTo(BigDecimal.ZERO) <= 0) {
+                        return 0.0;
+                }
+                if (profitLoss == null) {
             return 0.0;
         }
         return profitLoss.multiply(BigDecimal.valueOf(100))

@@ -4,6 +4,7 @@ import com.backend.dto.SuggestionDTO;
 import com.backend.entity.Customer;
 import com.backend.entity.Investment;
 import com.backend.entity.Portfolio;
+import com.backend.exception.CustomerNotFoundException;
 import com.backend.repository.CustomerRepository;
 import com.backend.repository.InvestmentRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,10 +77,11 @@ class SuggestionServiceTest {
     // ── getSuggestionsByCustomer ─────────────────────────────────────────────
 
     @Test
-    void getSuggestionsByCustomer_nonExistingCustomer_returnsEmptyList() {
+    void getSuggestionsByCustomer_nonExistingCustomer_throwsNotFound() {
         when(customerRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThat(suggestionService.getSuggestionsByCustomer(99L)).isEmpty();
+        assertThatThrownBy(() -> suggestionService.getSuggestionsByCustomer(99L))
+                .isInstanceOf(CustomerNotFoundException.class);
     }
 
     @Test
