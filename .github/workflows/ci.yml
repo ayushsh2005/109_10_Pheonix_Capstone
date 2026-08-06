@@ -102,9 +102,6 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/portfolio_db
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
-          # Schema is already loaded above from the real schema.sql — tell
-          # Hibernate to just check it matches the entities, not manage it.
-          SPRING_JPA_HIBERNATE_DDL_AUTO: validate
         run: ./mvnw -B -ntp clean verify
 
       - name: Upload test reports
