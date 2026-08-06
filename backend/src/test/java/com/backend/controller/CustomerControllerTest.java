@@ -48,7 +48,8 @@ class CustomerControllerTest {
     void setUp() {
         customerResponse = new CustomerResponseDTO(
                 1L, "Alice", "alice@example.com", "1234567890",
-                "Moderate", "Retirement", LocalDateTime.now(), "Active", BigDecimal.ZERO
+                "Moderate", "Retirement", LocalDateTime.now(), "Active", BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0.0, null, null
         );
 
         customerRequest = new CustomerRequestDTO();
@@ -185,7 +186,8 @@ class CustomerControllerTest {
     void updateCustomer_validJson_returns200() throws Exception {
         customerResponse = new CustomerResponseDTO(
                 1L, "Alice Updated", "alice@example.com", "1234567890",
-                "Moderate", "Retirement", LocalDateTime.now(), "Active", BigDecimal.ZERO
+                "Moderate", "Retirement", LocalDateTime.now(), "Active", BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0.0, null, null
         );
         when(customerService.updateCustomer(eq(1L), any())).thenReturn(customerResponse);
 
@@ -251,9 +253,9 @@ class CustomerControllerTest {
     void getPerformance_existingCustomer_returns200() throws Exception {
         PortfolioPerformanceDTO perf = new PortfolioPerformanceDTO(
                 1L, "Alice", new BigDecimal("2000.00"), new BigDecimal("2100.00"),
-                new BigDecimal("100.00"), 5.0
+                new BigDecimal("100.00"), 5.0, List.of()
         );
-        when(portfolioService.getPerformance(1L)).thenReturn(perf);
+        when(portfolioService.getPerformance(eq(1L), anyString())).thenReturn(perf);
 
         mockMvc.perform(get("/customers/1/performance"))
                 .andExpect(status().isOk())

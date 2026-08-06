@@ -9,11 +9,15 @@ import com.backend.exception.CustomerNotFoundException;
 import com.backend.repository.CustomerRepository;
 import com.backend.repository.InvestmentRepository;
 import com.backend.repository.PortfolioRepository;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,12 +26,14 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final PortfolioRepository portfolioRepository;
     private final InvestmentRepository investmentRepository;
+    private final ObjectMapper objectMapper;
 
     public CustomerService(CustomerRepository customerRepository, PortfolioRepository portfolioRepository,
-                            InvestmentRepository investmentRepository) {
+                            InvestmentRepository investmentRepository, ObjectMapper objectMapper) {
         this.customerRepository = customerRepository;
         this.portfolioRepository = portfolioRepository;
         this.investmentRepository = investmentRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)
@@ -51,11 +57,8 @@ public class CustomerService {
         }
 
         Customer customer = new Customer();
-        customer.setName(request.getName());
-        customer.setEmail(request.getEmail());
-        customer.setPhone(request.getPhone());
-        customer.setRiskProfile(request.getRiskProfile());
-        customer.setInvestmentGoal(request.getInvestmentGoal());
+        applyRequest(customer, request);
+        customer.setStatus("Active");
 
         Customer saved = customerRepository.save(customer);
 
@@ -76,13 +79,26 @@ public class CustomerService {
             throw new IllegalArgumentException("Email is already in use: " + request.getEmail());
         }
 
-        customer.setName(request.getName());
-        customer.setEmail(request.getEmail());
-        customer.setPhone(request.getPhone());
-        customer.setRiskProfile(request.getRiskProfile());
-        customer.setInvestmentGoal(request.getInvestmentGoal());
-
+        applyRequest(customer, request);
         return toResponseDTO(customerRepository.save(customer));
+    }
+
+    @Transactional
+    public CustomerResponseDTO archiveCustomer(Long id) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException(id));
+        customerRepository.updateStatus(id, "Archived");
+        customer.setStatus("Archived");
+        return toResponseDTO(customer);
+    }
+
+    @Transactional
+    public CustomerResponseDTO restoreCustomer(Long id) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException(id));
+        customerRepository.updateStatus(id, "Active");
+        customer.setStatus("Active");
+        return toResponseDTO(customer);
     }
 
     @Transactional
@@ -92,11 +108,53 @@ public class CustomerService {
         customerRepository.delete(customer);
     }
 
-    private CustomerResponseDTO toResponseDTO(Customer customer) {
+    private void applyRequest(Customer customer, CustomerRequestDTO request) {
+        customer.setName(request.getName());
+        customer.setEmail(request.getEmail());
+        customer.setPhone(request.getPhone());
+        customer.setRiskProfile(request.getRiskProfile());
+        customer.setInvestmentGoal(request.getInvestmentGoal());
+        customer.setNotes(request.getNotes());
+        customer.setTargetAllocation(serialiseAllocation(request.getTargetAllocation()));
+    }
+
+    private String serialiseAllocation(Map<String, Object> map) {
+        if (map == null || map.isEmpty()) return null;
+        try {
+            return objectMapper.writeValueAsString(map);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Map<String, Object> deserialiseAllocation(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    CustomerResponseDTO toResponseDTO(Customer customer) {
         List<Investment> investments = investmentRepository.findByPortfolioCustomerId(customer.getId());
-        BigDecimal portfolioValue = investments.stream()
+
+        BigDecimal totalInvestment = investments.stream()
+                .map(i -> i.getQuantity().multiply(i.getPurchasePrice()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal currentValue = investments.stream()
                 .map(i -> i.getQuantity().multiply(i.getCurrentPrice()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal profitLoss = currentValue.subtract(totalInvestment);
+
+        double returnPercentage = totalInvestment.compareTo(BigDecimal.ZERO) > 0
+                ? profitLoss.multiply(BigDecimal.valueOf(100))
+                        .divide(totalInvestment, 4, RoundingMode.HALF_UP).doubleValue()
+                : 0.0;
+
+        String status = customer.getStatus() != null ? customer.getStatus() : "Active";
 
         return new CustomerResponseDTO(
                 customer.getId(),
@@ -106,8 +164,15 @@ public class CustomerService {
                 customer.getRiskProfile(),
                 customer.getInvestmentGoal(),
                 customer.getCreatedDate(),
-                "Active",
-                portfolioValue
+                status,
+                currentValue,
+                totalInvestment,
+                currentValue,
+                profitLoss,
+                returnPercentage,
+                customer.getNotes(),
+                deserialiseAllocation(customer.getTargetAllocation())
         );
     }
 }
+

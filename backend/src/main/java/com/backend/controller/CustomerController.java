@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -182,14 +183,42 @@ public class CustomerController {
     @GetMapping("/{id}/performance")
         @Operation(summary = "Get customer performance", description = "Returns portfolio performance metrics for a customer")
         @Parameter(name = "id", description = "Customer ID", required = true)
+        @Parameter(name = "range", description = "Time range: 1M, 3M, 6M, 1Y, ALL", required = false)
         @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Performance fetched",
                 content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = PortfolioPerformanceDTO.class))),
             @ApiResponse(responseCode = "404", description = "Customer or portfolio not found", content = @Content)
         })
-    public PortfolioPerformanceDTO getPerformance(@PathVariable Long id) {
-        return portfolioService.getPerformance(id);
+    public PortfolioPerformanceDTO getPerformance(@PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "6M") String range) {
+        return portfolioService.getPerformance(id, range);
+    }
+
+    @PostMapping("/{id}/archive")
+        @Operation(summary = "Archive customer", description = "Sets customer status to Archived")
+        @Parameter(name = "id", description = "Customer ID", required = true)
+        @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Customer archived",
+                content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = CustomerResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Customer not found", content = @Content)
+        })
+    public CustomerResponseDTO archiveCustomer(@PathVariable Long id) {
+        return customerService.archiveCustomer(id);
+    }
+
+    @PostMapping("/{id}/restore")
+        @Operation(summary = "Restore customer", description = "Sets customer status back to Active")
+        @Parameter(name = "id", description = "Customer ID", required = true)
+        @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Customer restored",
+                content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = CustomerResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Customer not found", content = @Content)
+        })
+    public CustomerResponseDTO restoreCustomer(@PathVariable Long id) {
+        return customerService.restoreCustomer(id);
     }
 
     private CustomerRequestDTO parseRequest(String requestBody) {

@@ -66,18 +66,20 @@ public class PortfolioService {
     }
 
     @Transactional(readOnly = true)
-    public PortfolioPerformanceDTO getPerformance(Long customerId) {
+    public PortfolioPerformanceDTO getPerformance(Long customerId, String range) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new CustomerNotFoundException(customerId));
 
         List<Investment> investments = investmentRepository.findByPortfolioCustomerId(customerId);
-        BigDecimal totalInvestment = totalInvestment(investments);
+        BigDecimal totalInvested = totalInvestment(investments);
         BigDecimal currentValue = currentValue(investments);
-        BigDecimal profitLoss = currentValue.subtract(totalInvestment);
-        double returnPercentage = returnPercentage(totalInvestment, profitLoss);
+        BigDecimal profitLoss = currentValue.subtract(totalInvested);
+        double returnPercentage = returnPercentage(totalInvested, profitLoss);
 
-        return new PortfolioPerformanceDTO(customerId, customer.getName(), totalInvestment, currentValue,
-                profitLoss, returnPercentage);
+        List<PerformancePointDTO> series = buildCustomerPerformanceSeries(investments, range);
+
+        return new PortfolioPerformanceDTO(customerId, customer.getName(), totalInvested, currentValue,
+                profitLoss, returnPercentage, series);
     }
 
     @Transactional(readOnly = true)
@@ -119,6 +121,33 @@ public class PortfolioService {
 
         allocation.sort(Comparator.comparing(AllocationDTO::getValue).reversed());
         return allocation;
+    }
+
+    private List<PerformancePointDTO> buildCustomerPerformanceSeries(List<Investment> investments, String range) {
+        int months;
+        switch (range == null ? "6M" : range.toUpperCase()) {
+            case "1M":  months = 1;  break;
+            case "3M":  months = 3;  break;
+            case "1Y":  months = 12; break;
+            case "ALL": months = 24; break;
+            default:    months = 6;  break;
+        }
+
+        List<PerformancePointDTO> series = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+
+        for (int i = months - 1; i >= 0; i--) {
+            LocalDate monthEnd = today.minusMonths(i);
+            BigDecimal value = investments.stream()
+                    .filter(inv -> inv.getPurchaseDate() != null && !inv.getPurchaseDate().isAfter(monthEnd))
+                    .map(inv -> inv.getQuantity().multiply(inv.getCurrentPrice()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            String label = monthEnd.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+            series.add(new PerformancePointDTO(label, value));
+        }
+
+        return series;
     }
 
     private List<PerformancePointDTO> buildPerformanceTrend(List<Investment> investments) {

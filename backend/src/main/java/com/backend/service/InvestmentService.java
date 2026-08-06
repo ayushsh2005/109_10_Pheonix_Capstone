@@ -8,6 +8,7 @@ import com.backend.exception.InvestmentNotFoundException;
 import com.backend.exception.PortfolioNotFoundException;
 import com.backend.repository.InvestmentRepository;
 import com.backend.repository.PortfolioRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +20,13 @@ public class InvestmentService {
 
     private final InvestmentRepository investmentRepository;
     private final PortfolioRepository portfolioRepository;
+    private final TradeService tradeService;
 
-    public InvestmentService(InvestmentRepository investmentRepository, PortfolioRepository portfolioRepository) {
+    public InvestmentService(InvestmentRepository investmentRepository, PortfolioRepository portfolioRepository,
+                             @Lazy TradeService tradeService) {
         this.investmentRepository = investmentRepository;
         this.portfolioRepository = portfolioRepository;
+        this.tradeService = tradeService;
     }
 
     @Transactional(readOnly = true)
@@ -48,7 +52,10 @@ public class InvestmentService {
         investment.setPortfolio(portfolio);
         applyRequest(investment, request);
 
-        return toResponseDTO(investmentRepository.save(investment));
+        Investment saved = investmentRepository.save(investment);
+        tradeService.recordBuy(saved, customerId);
+
+        return toResponseDTO(saved);
     }
 
     @Transactional

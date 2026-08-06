@@ -114,7 +114,7 @@ class PortfolioServiceTest {
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(investmentRepository.findByPortfolioCustomerId(1L)).thenReturn(List.of(investmentA, investmentB));
 
-        PortfolioPerformanceDTO result = portfolioService.getPerformance(1L);
+        PortfolioPerformanceDTO result = portfolioService.getPerformance(1L, "6M");
 
         // return% = (100 / 2000) * 100 = 5.0%
         assertThat(result.getReturnPercentage()).isEqualTo(5.0);
@@ -126,7 +126,7 @@ class PortfolioServiceTest {
     void getPerformance_customerNotFound_throwsCustomerNotFoundException() {
         when(customerRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> portfolioService.getPerformance(99L))
+        assertThatThrownBy(() -> portfolioService.getPerformance(99L, "6M"))
                 .isInstanceOf(CustomerNotFoundException.class);
     }
 
@@ -135,7 +135,7 @@ class PortfolioServiceTest {
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(investmentRepository.findByPortfolioCustomerId(1L)).thenReturn(List.of());
 
-        PortfolioPerformanceDTO result = portfolioService.getPerformance(1L);
+        PortfolioPerformanceDTO result = portfolioService.getPerformance(1L, "1M");
 
         assertThat(result.getReturnPercentage()).isEqualTo(0.0);
         assertThat(result.getProfitLoss()).isEqualByComparingTo(BigDecimal.ZERO);

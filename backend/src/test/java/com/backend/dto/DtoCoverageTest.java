@@ -54,7 +54,9 @@ class DtoCoverageTest {
 
         LocalDateTime joined = LocalDateTime.of(2026, 1, 1, 10, 0);
         CustomerResponseDTO dto = new CustomerResponseDTO(1L, "Bob", "bob@example.com", "9999999999",
-                "Conservative", "Income", joined, "Active", new BigDecimal("2500.00"));
+                "Conservative", "Income", joined, "Active", new BigDecimal("2500.00"),
+                new BigDecimal("2000.00"), new BigDecimal("2500.00"),
+                new BigDecimal("500.00"), 25.0, null, null);
 
         assertThat(dto.getId()).isEqualTo(1L);
         assertThat(dto.getName()).isEqualTo("Bob");
@@ -170,25 +172,25 @@ class DtoCoverageTest {
         assertThat(portfolio.getReturnPercentage()).isEqualTo(12.0);
 
         PortfolioPerformanceDTO performance = new PortfolioPerformanceDTO(3L, "User",
-                new BigDecimal("500"), new BigDecimal("650"), new BigDecimal("150"), 30.0);
+                new BigDecimal("500"), new BigDecimal("650"), new BigDecimal("150"), 30.0, List.of());
 
         assertThat(performance.getCustomerId()).isEqualTo(3L);
         assertThat(performance.getCustomerName()).isEqualTo("User");
-        assertThat(performance.getTotalInvestment()).isEqualByComparingTo("500");
+        assertThat(performance.getTotalInvested()).isEqualByComparingTo("500");
         assertThat(performance.getCurrentValue()).isEqualByComparingTo("650");
         assertThat(performance.getProfitLoss()).isEqualByComparingTo("150");
         assertThat(performance.getReturnPercentage()).isEqualTo(30.0);
 
         performance.setCustomerId(5L);
         performance.setCustomerName("Updated User");
-        performance.setTotalInvestment(new BigDecimal("900"));
+        performance.setTotalInvested(new BigDecimal("900"));
         performance.setCurrentValue(new BigDecimal("990"));
         performance.setProfitLoss(new BigDecimal("90"));
         performance.setReturnPercentage(10.0);
 
         assertThat(performance.getCustomerId()).isEqualTo(5L);
         assertThat(performance.getCustomerName()).isEqualTo("Updated User");
-        assertThat(performance.getTotalInvestment()).isEqualByComparingTo("900");
+        assertThat(performance.getTotalInvested()).isEqualByComparingTo("900");
         assertThat(performance.getCurrentValue()).isEqualByComparingTo("990");
         assertThat(performance.getProfitLoss()).isEqualByComparingTo("90");
         assertThat(performance.getReturnPercentage()).isEqualTo(10.0);
